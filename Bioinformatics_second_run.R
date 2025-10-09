@@ -593,7 +593,7 @@
      
      
 ## DATA VISUALISATION / RESULTS ####
-     ## FIGURE 1: kinship heat maps ####
+     ## FIGURE 1: Kinship Heatmaps ####
      
      ## LANDOLTIA
      
@@ -601,7 +601,7 @@
        col_pal = colorRampPalette(c("purple", "white"))
        colbreaks = 10
        clone_cutoff = 0.02
-       
+           
        ## set up split screen layout
        par(mar=c(2,2,2,2),oma=c(3,3,3,3))
        split.screen(rbind(c(0, 0.8, 0, 1), 
@@ -705,9 +705,7 @@
        close.screen(2)
        close.screen(all.screens=TRUE)
        
-       
-     
-     ## LANDOLTIA distance decay plots ####
+     ## FIGURE 2: Distance Decay Plots ####
      
      ## read and transform coordinates
      all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
@@ -718,63 +716,72 @@
      
      par(mfrow=c(1,2))
      
-     ## full dataset
+     ## LANDOLTIA
      
-          ## subset to landoltia
-          landoltia_coor = all_coordinates[which(colnames(landoltia_hamdist) %in% all_coordinates[,"ID"]),]
-          
-          ## calculate geographic distance
-          landoltia_geodist = round(distm(landoltia_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
-          rownames(landoltia_geodist) = landoltia_coor[,"ID"]; colnames(landoltia_geodist) = landoltia_coor[,"ID"]
-          
-          ## transform to vector
-          landoltia_geodist_vector = as.vector(landoltia_geodist)
-          landoltia_hamdist_vector = as.vector(landoltia_hamdist)
-          
-          ## replace 0 values, for log transform
-          landoltia_geodist_vector[which(landoltia_geodist_vector==0)] = 1
-          
-          ## assemble plot
-          plot(log(landoltia_geodist_vector), landoltia_hamdist_vector,
-               pch=21, bg="purple", cex=0.8, ylim=c(-0.01,max(landoltia_hamdist)),
-               xlab="pairwise log geographic distance (m)", 
-               ylab="pairwise genetic distance (Hamming)",
-               main="Landoltia distance-decay plot")
-          abline(lm(landoltia_hamdist_vector~log(landoltia_geodist_vector)), lwd=5, col="red")
-          abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
-          abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
-          abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
-          abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
-          abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
-          
-     ## no clone dataset
+       ## subset to landoltia
+       landoltia_coor = all_coordinates[which(colnames(landoltia_hamdist) %in% all_coordinates[,"ID"]),]
+       
+       ## calculate geographic distance
+       landoltia_geodist = round(distm(landoltia_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
+       rownames(landoltia_geodist) = landoltia_coor[,"ID"]; colnames(landoltia_geodist) = landoltia_coor[,"ID"]
+       
+       ## reduce matrix to triangle
+       landoltia_hamdist_vector = landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]
+       landoltia_geodist_vector = landoltia_geodist[lower.tri(landoltia_geodist, diag=FALSE)]
+       
+       # replace 0 values, for log transform
+       landoltia_geodist_vector[which(landoltia_geodist_vector==0)] = 1
+       
+       ## assemble plot
+       plot(log(landoltia_geodist_vector), landoltia_hamdist_vector,
+            pch=21, bg="purple", cex=0.8, ylim=c(-0.01,max(c(lemna_hamdist,landoltia_hamdist))),
+            xlab="Geographic distance log(m)", 
+            ylab="Genetic distance")
+       abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
+       abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
+       abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
+       abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
+       abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
+       
+     ## LEMNA
+       
+       ## subset to lemna
+       lemna_coor = all_coordinates[which(colnames(lemna_hamdist) %in% all_coordinates[,"ID"]),]
+       
+       ## calculate geographic distance
+       lemna_geodist = round(distm(lemna_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
+       rownames(lemna_geodist) = lemna_coor[,"ID"]; colnames(lemna_geodist) = lemna_coor[,"ID"]
+       
+       ## reduce matrix to triangle
+       lemna_hamdist_vector = lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]
+       lemna_geodist_vector = lemna_geodist[lower.tri(lemna_geodist, diag=FALSE)]
+       
+       # replace 0 values, for log transform
+       lemna_geodist_vector[which(lemna_geodist_vector==0)] = 1
+       
+       ## assemble plot
+       plot(log(lemna_geodist_vector), lemna_hamdist_vector,
+            pch=21, bg="darkgreen", cex=0.8, ylim=c(-0.01,max(c(lemna_hamdist, landoltia_hamdist))),
+            xlab="Geographic distance log(m)", 
+            ylab="Genetic distance")
+       abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
+       abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
+       abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
+       abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
+       abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
+
      
-          ## subset to landoltia
-          landoltia_noclone_coor = all_coordinates[which(colnames(landoltia_noclone_hamdist) %in% all_coordinates[,"ID"]),]
-          
-          ## calculate geographic distance
-          landoltia_noclone_geodist = round(distm(landoltia_noclone_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
-          rownames(landoltia_noclone_geodist) = landoltia_noclone_coor[,"ID"]; colnames(landoltia_noclone_geodist) = landoltia_noclone_coor[,"ID"]
-          
-          ## transform to vector
-          landoltia_noclone_geodist_vector = as.vector(landoltia_noclone_geodist)
-          landoltia_noclone_hamdist_vector = as.vector(landoltia_noclone_hamdist)
-          
-          ## replace 0 values, for log transform
-          landoltia_noclone_geodist_vector[which(landoltia_noclone_geodist_vector==0)] = 1
-          
-          ## assemble plot
-          plot(log(landoltia_noclone_geodist_vector), landoltia_noclone_hamdist_vector,
-               pch=21, bg="purple", cex=0.8, ylim=c(-0.01,max(landoltia_noclone_hamdist)),
-               xlab="pairwise log geographic distance (m)", 
-               ylab="pairwise genetic distance (Hamming)",
-               main="Landoltia no clone distance-decay plot")
-          abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
-          abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
-          abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
-          abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
-          abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
-          
+     ## Mantel tests
+     
+     ## LANDOLTIA
+     vegan::mantel(landoltia_hamdist, landoltia_geodist)
+     
+     ## LEMNA
+     vegan::mantel(lemna_hamdist, lemna_geodist)
+       
+       
+       
+       
      ## LANDOLTIA within vs across pond diversity ####
           
      ## subset the ponds   
@@ -848,74 +855,6 @@
            lwd=2)
      
      
-          
-     ## LEMNA distance decay plots ####
-     
-     ## read and transform coordinates
-     all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
-     all_coordinates$latitude = sapply(all_coordinates[,"GPS_S"], convert_dmm_to_dd)
-     all_coordinates$longitute = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
-     
-     ## assemble plot
-     
-     par(mfrow=c(1,2))
-     
-     ## full dataset
-     
-          ## subset to lemna
-          lemna_coor = all_coordinates[which(colnames(lemna_hamdist) %in% all_coordinates[,"ID"]),]
-          
-          ## calculate geographic distance
-          lemna_geodist = round(distm(lemna_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
-          rownames(lemna_geodist) = lemna_coor[,"ID"]; colnames(lemna_geodist) = lemna_coor[,"ID"]
-          
-          ## transform to vector
-          lemna_geodist_vector = as.vector(lemna_geodist)
-          lemna_hamdist_vector = as.vector(lemna_hamdist)
-          
-          ## replace 0 values, for log transform
-          lemna_geodist_vector[which(lemna_geodist_vector==0)] = 1
-          
-          ## assemble plot
-          plot(log(lemna_geodist_vector), lemna_hamdist_vector,
-               pch=21, bg="darkgreen", cex=0.8, ylim=c(-0.01,max(lemna_hamdist)),
-               xlab="pairwise log geographic distance (m)", 
-               ylab="pairwise genetic distance (Hamming)",
-               main="lemna distance-decay plot")
-          abline(lm(lemna_hamdist_vector~log(lemna_geodist_vector)), lwd=5, col="red")
-          abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
-          abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
-          abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
-          abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
-          abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
-          
-     ## no clone dataset
-     
-          ## subset to lemna
-          lemna_noclone_coor = all_coordinates[which(colnames(lemna_noclone_hamdist) %in% all_coordinates[,"ID"]),]
-          
-          ## calculate geographic distance
-          lemna_noclone_geodist = round(distm(lemna_noclone_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
-          rownames(lemna_noclone_geodist) = lemna_noclone_coor[,"ID"]; colnames(lemna_noclone_geodist) = lemna_noclone_coor[,"ID"]
-          
-          ## transform to vector
-          lemna_noclone_geodist_vector = as.vector(lemna_noclone_geodist)
-          lemna_noclone_hamdist_vector = as.vector(lemna_noclone_hamdist)
-          
-          ## replace 0 values, for log transform
-          lemna_noclone_geodist_vector[which(lemna_noclone_geodist_vector==0)] = 1
-          
-          ## assemble plot
-          plot(log(lemna_noclone_geodist_vector), lemna_noclone_hamdist_vector,
-               pch=21, bg="darkgreen", cex=0.8, ylim=c(-0.01,max(lemna_noclone_hamdist)),
-               xlab="pairwise log geographic distance (m)", 
-               ylab="pairwise genetic distance (Hamming)",
-               main="lemna no clone distance-decay plot")
-          abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
-          abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
-          abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
-          abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
-          abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
           
      ## LEMNA within vs across pond diversity ####
      
@@ -2149,5 +2088,106 @@
        close.screen(2)
        close.screen(all.screens=TRUE)
      }
+     
+     
+     ## LEMNA distance decay plots ####
+     
+     ## read and transform coordinates
+     all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
+     all_coordinates$latitude = sapply(all_coordinates[,"GPS_S"], convert_dmm_to_dd)
+     all_coordinates$longitute = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
+     
+     ## assemble plot
+     
+     par(mfrow=c(1,2))
+     
+     ## full dataset
+     
+     ## subset to lemna
+     lemna_coor = all_coordinates[which(colnames(lemna_hamdist) %in% all_coordinates[,"ID"]),]
+     
+     ## calculate geographic distance
+     lemna_geodist = round(distm(lemna_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
+     rownames(lemna_geodist) = lemna_coor[,"ID"]; colnames(lemna_geodist) = lemna_coor[,"ID"]
+     
+     ## transform to vector
+     lemna_geodist_vector = as.vector(lemna_geodist)
+     lemna_hamdist_vector = as.vector(lemna_hamdist)
+     
+     ## replace 0 values, for log transform
+     lemna_geodist_vector[which(lemna_geodist_vector==0)] = 1
+     
+     ## assemble plot
+     plot(log(lemna_geodist_vector), lemna_hamdist_vector,
+          pch=21, bg="darkgreen", cex=0.8, ylim=c(-0.01,max(lemna_hamdist)),
+          xlab="pairwise log geographic distance (m)", 
+          ylab="pairwise genetic distance (Hamming)",
+          main="lemna distance-decay plot")
+     abline(lm(lemna_hamdist_vector~log(lemna_geodist_vector)), lwd=5, col="red")
+     abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
+     abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
+     abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
+     abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
+     abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
+     
+     ## no clone dataset
+     
+     ## subset to lemna
+     lemna_noclone_coor = all_coordinates[which(colnames(lemna_noclone_hamdist) %in% all_coordinates[,"ID"]),]
+     
+     ## calculate geographic distance
+     lemna_noclone_geodist = round(distm(lemna_noclone_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
+     rownames(lemna_noclone_geodist) = lemna_noclone_coor[,"ID"]; colnames(lemna_noclone_geodist) = lemna_noclone_coor[,"ID"]
+     
+     ## transform to vector
+     lemna_noclone_geodist_vector = as.vector(lemna_noclone_geodist)
+     lemna_noclone_hamdist_vector = as.vector(lemna_noclone_hamdist)
+     
+     ## replace 0 values, for log transform
+     lemna_noclone_geodist_vector[which(lemna_noclone_geodist_vector==0)] = 1
+     
+     ## assemble plot
+     plot(log(lemna_noclone_geodist_vector), lemna_noclone_hamdist_vector,
+          pch=21, bg="darkgreen", cex=0.8, ylim=c(-0.01,max(lemna_noclone_hamdist)),
+          xlab="pairwise log geographic distance (m)", 
+          ylab="pairwise genetic distance (Hamming)",
+          main="lemna no clone distance-decay plot")
+     abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
+     abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
+     abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
+     abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
+     abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
+     
+     ## LANDOLTIA NO CLONE VERSION
+     
+     ## no clone dataset
+     
+     ## subset to landoltia
+     landoltia_noclone_coor = all_coordinates[which(colnames(landoltia_noclone_hamdist) %in% all_coordinates[,"ID"]),]
+     
+     ## calculate geographic distance
+     landoltia_noclone_geodist = round(distm(landoltia_noclone_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
+     rownames(landoltia_noclone_geodist) = landoltia_noclone_coor[,"ID"]; colnames(landoltia_noclone_geodist) = landoltia_noclone_coor[,"ID"]
+     
+     ## transform to vector
+     landoltia_noclone_geodist_vector = as.vector(landoltia_noclone_geodist)
+     landoltia_noclone_hamdist_vector = as.vector(landoltia_noclone_hamdist)
+     
+     ## replace 0 values, for log transform
+     landoltia_noclone_geodist_vector[which(landoltia_noclone_geodist_vector==0)] = 1
+     
+     ## assemble plot
+     plot(log(landoltia_noclone_geodist_vector), landoltia_noclone_hamdist_vector,
+          pch=21, bg="purple", cex=0.8, ylim=c(-0.01,max(landoltia_noclone_hamdist)),
+          xlab="pairwise log geographic distance (m)", 
+          ylab="pairwise genetic distance (Hamming)",
+          main="Landoltia no clone distance-decay plot")
+     abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
+     abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
+     abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
+     abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
+     abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
+     
+     
      
      
