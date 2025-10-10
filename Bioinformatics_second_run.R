@@ -774,13 +774,11 @@
      ## Mantel tests
      
      ## LANDOLTIA
-     vegan::mantel(landoltia_hamdist, landoltia_geodist)
+     vegan::mantel(landoltia_hamdist, landoltia_geodist, permutations = 1000)
      
      ## LEMNA
-     vegan::mantel(lemna_hamdist, lemna_geodist)
-       
-       
-       
+     vegan::mantel(lemna_hamdist, lemna_geodist, permutations = 1000)
+     
        
      ## LANDOLTIA within vs across pond diversity ####
           
@@ -845,16 +843,28 @@
              mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)])-sd(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)])),
            lwd=2)
      
-     ## all data
-     points(runif(length(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), min = 5.8, max = 6.2),
-            landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
-     points(6, mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(6,6), 
-           c(mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])+sd(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]),
-             mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])-sd(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])),
-           lwd=2)
+     # ## all data
+     # points(runif(length(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), min = 5.8, max = 6.2),
+     #        landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
+     # points(6, mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), pch=21, bg="black", cex=2)
+     # lines(c(6,6), 
+     #       c(mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])+sd(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]),
+     #         mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])-sd(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])),
+     #       lwd=2)
+     
+     ## random permutation means
+     perm_mean = vector()
+     for (n in 1:10000) {
+       
+       runner_sample = sample(colnames(landoltia_hamdist), 22)
+       runner_matrix = landoltia_hamdist[runner_sample,runner_sample]
+       perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
+       
+     }
+     points(rep(6,10000), perm_mean)
      
      
+     sd
           
      ## LEMNA within vs across pond diversity ####
      
