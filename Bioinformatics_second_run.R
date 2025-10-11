@@ -61,7 +61,6 @@
        return(out_rarecurve)
      }
      
-     
 ## PIPELINE & FILTERING ####
      ## initial filter with vcftools ####
      
@@ -780,18 +779,18 @@
      vegan::mantel(lemna_hamdist, lemna_geodist, permutations = 1000)
      
        
-     ## FIGURE 3: within vs outside distance ####
+     ## FIGURE 3: Within vs outside distance/diversity/clone number ####
      
      ## number of iterations
      iter = 1000
      
      ## set screens
-     split.screen(rbind(c(0, 0.5, 0.66, 1), 
-                        c(0, 0.5, 0.33, 0.66),
-                        c(0, 0.5, 0, 0.33),
-                        c(0.5, 1, 0.66, 1), 
-                        c(0.5, 1, 0.33, 0.66),
-                        c(0.5, 1, 0, 0.33)))
+     split.screen(rbind(c(0, 0.55, 0.66, 1), 
+                        c(0, 0.55, 0.33, 0.66),
+                        c(0, 0.55, 0, 0.33),
+                        c(0.55, 1, 0.66, 1), 
+                        c(0.55, 1, 0.33, 0.66),
+                        c(0.55, 1, 0, 0.33)))
 
      ## LANDOLTIA
      
@@ -808,7 +807,8 @@
          landoltia_perm_diversity = vector()
          for (n in 1:iter) {
            
-           runner_sample = sample(colnames(landoltia_hamdist), 22)
+           sim_size = sample(20:27,1)
+           runner_sample = sample(colnames(landoltia_hamdist), sim_size)
            runner_matrix = landoltia_hamdist[runner_sample,runner_sample]
            landoltia_perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
            landoltia_perm_clone[n] = ncol(hamdist_to_rarecurve(runner_matrix))
@@ -816,35 +816,35 @@
          }
          
          ## mean plot
-         par(mar=c(0.3,5,0.3,0.3))
+         par(mar=c(0.3,4.5,0.3,0.3))
          screen(1)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.2), xlab="", main="", xaxt = "n", ylab="Genetic distance", las=2)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", ylab="Genetic distance", las=2)
          points(1, mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]), pch=21, bg="purple", cex=2)
          points(2, mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]), pch=21, bg="purple", cex=2)
          points(3, mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]), pch=21, bg="purple", cex=2)
          points(4, mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]), pch=21, bg="purple", cex=2)
          points(5, mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]), pch=21, bg="purple", cex=2)
          points(rep(6,iter), landoltia_perm_mean, pch=21, bg="purple", cex=2)
-         abline(h=quantile(landoltia_perm_mean, probs = c(0.001, 0.999)))
+         abline(h=quantile(landoltia_perm_mean, probs = c(0.001, 0.999)), lty=2, lwd=2)
          close.screen(1)
          
          ## diversity plot
-         par(mar=c(0.3,5,0.3,0.3))
+         par(mar=c(0.3,4.5,0.3,0.3))
          screen(2)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(-0.1,3.1), xlab="", main="", xaxt = "n", ylab="Diversity (Shannon)", las=2)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(-0.1,3.3), xlab="", main="", xaxt = "n", ylab="Diversity (Shannon)", las=2)
          points(1, diversity(hamdist_to_rarecurve(landoltia_p10)),pch=21, bg="purple", cex=2)
          points(2, diversity(hamdist_to_rarecurve(landoltia_p14)),pch=21, bg="purple", cex=2)
          points(3, diversity(hamdist_to_rarecurve(landoltia_p19)),pch=21, bg="purple", cex=2)
          points(4, diversity(hamdist_to_rarecurve(landoltia_p27)),pch=21, bg="purple", cex=2)
          points(5, diversity(hamdist_to_rarecurve(landoltia_p36)),pch=21, bg="purple", cex=2)
          points(rep(6,iter), landoltia_perm_diversity, pch=21, bg="purple", cex=2)
-         abline(h=quantile(landoltia_perm_diversity, probs = c(0.001, 0.999)))
+         abline(h=quantile(landoltia_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=2)
          close.screen(2)
          
          ## clones plot
-         par(mar=c(0.3,5,0.3,0.3))
+         par(mar=c(3,4.5,0.3,0.3))
          screen(3)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,23), xlab="", main="", xaxt = "n", ylab="Number of clones", las=2)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,27), xlab="", main="", xaxt = "n", ylab="Number of clones", las=2)
          axis(1, at = 1:6, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm"))
          points(1, ncol(hamdist_to_rarecurve(landoltia_p10)),pch=21, bg="purple", cex=2)
          points(2, ncol(hamdist_to_rarecurve(landoltia_p14)),pch=21, bg="purple", cex=2)
@@ -852,7 +852,7 @@
          points(4, ncol(hamdist_to_rarecurve(landoltia_p27)),pch=21, bg="purple", cex=2)
          points(5, ncol(hamdist_to_rarecurve(landoltia_p36)),pch=21, bg="purple", cex=2)
          points(rep(6,iter), landoltia_perm_clone, pch=21, bg="purple", cex=2)
-         abline(h=quantile(landoltia_perm_clone, probs = c(0.001, 0.999)))
+         abline(h=quantile(landoltia_perm_clone, probs = c(0.001, 0.999)), lty=2, lwd=2)
          close.screen(3)
          
      ## LEMNA
@@ -870,7 +870,8 @@
          lemna_perm_diversity = vector()
          for (n in 1:iter) {
            
-           runner_sample = sample(colnames(lemna_hamdist), 22)
+           sim_size = sample(20:27,1)
+           runner_sample = sample(colnames(lemna_hamdist), sim_size)
            runner_matrix = lemna_hamdist[runner_sample,runner_sample]
            lemna_perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
            lemna_perm_clone[n] = ncol(hamdist_to_rarecurve(runner_matrix))
@@ -880,33 +881,33 @@
          ## mean plot
          par(mar=c(0.3,0.3,0.3,0.3))
          screen(4)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.2), xlab="", main="", xaxt = "n", yaxt="n", ylab="Genetic distance", las=2)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", yaxt="n", ylab="Genetic distance", las=2)
          points(1, mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
          points(2, mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
          points(3, mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
          points(4, mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
          points(5, mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
          points(rep(6,iter), lemna_perm_mean, pch=21, bg="darkgreen", cex=2)
-         abline(h=quantile(lemna_perm_mean, probs = c(0.001, 0.999)))
+         abline(h=quantile(lemna_perm_mean, probs = c(0.001, 0.999)), lty=2, lwd=2)
          close.screen(4)
          
          ## diversity plot
          par(mar=c(0.3,0.3,0.3,0.3))
          screen(5)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(-0.1,3.1), xlab="", main="", xaxt = "n",  yaxt="n", ylab="Diversity (Shannon)", las=2)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(-0.1,3.3), xlab="", main="", xaxt = "n",  yaxt="n", ylab="Diversity (Shannon)", las=2)
          points(1, diversity(hamdist_to_rarecurve(lemna_p10)),pch=21, bg="darkgreen", cex=2)
          points(2, diversity(hamdist_to_rarecurve(lemna_p14)),pch=21, bg="darkgreen", cex=2)
          points(3, diversity(hamdist_to_rarecurve(lemna_p19)),pch=21, bg="darkgreen", cex=2)
          points(4, diversity(hamdist_to_rarecurve(lemna_p27)),pch=21, bg="darkgreen", cex=2)
          points(5, diversity(hamdist_to_rarecurve(lemna_p36)),pch=21, bg="darkgreen", cex=2)
          points(rep(6,iter), lemna_perm_diversity, pch=21, bg="darkgreen", cex=2)
-         abline(h=quantile(lemna_perm_diversity, probs = c(0.001, 0.999)))
+         abline(h=quantile(lemna_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=2)
          close.screen(5)
          
          ## clones plot
-         par(mar=c(0.3,0.3,0.3,0.3))
+         par(mar=c(3,0.3,0.3,0.3))
          screen(6)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,23), xlab="", main="", xaxt = "n", yaxt="n", ylab="Number of clones", las=2)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,27), xlab="", main="", xaxt = "n", yaxt="n", ylab="Number of clones", las=2)
          axis(1, at = 1:6, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm"))
          points(1, ncol(hamdist_to_rarecurve(lemna_p10)),pch=21, bg="darkgreen", cex=2)
          points(2, ncol(hamdist_to_rarecurve(lemna_p14)),pch=21, bg="darkgreen", cex=2)
@@ -914,200 +915,77 @@
          points(4, ncol(hamdist_to_rarecurve(lemna_p27)),pch=21, bg="darkgreen", cex=2)
          points(5, ncol(hamdist_to_rarecurve(lemna_p36)),pch=21, bg="darkgreen", cex=2)
          points(rep(6,iter), lemna_perm_clone, pch=21, bg="darkgreen", cex=2)
-         abline(h=quantile(lemna_perm_clone, probs = c(0.001, 0.999)))
+         abline(h=quantile(lemna_perm_clone, probs = c(0.001, 0.999)), lty=2, lwd=2)
          close.screen(6)
          
-     ## LANDOLTIA within vs across pond diversity ####
-          
-     ## subset the ponds   
-     landoltia_p10 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P10"),which(substr(colnames(landoltia_hamdist),1,3) == "P10")]
-     landoltia_p14 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P14"),which(substr(colnames(landoltia_hamdist),1,3) == "P14")]
-     landoltia_p19 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P19"),which(substr(colnames(landoltia_hamdist),1,3) == "P19")]
-     landoltia_p27 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P27"),which(substr(colnames(landoltia_hamdist),1,3) == "P27")]
-     landoltia_p36 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P36"),which(substr(colnames(landoltia_hamdist),1,3) == "P36")]
+     ## Figure 4: Trees ####
      
-     ## draw and fill plot
-     plot(NULL, xlim=c(0.5,6.5), ylim=c(0,max(landoltia_hamdist)), xlab="", ylab="Hamming distance",
-          main="Landoltia: within and across pond diversity", xaxt = "n")
-     axis(1, at = 1:6, las=2, labels = c("Pond10", "Pond14", "Pond19", "Pond27", "Pond36", "all data"))
+     ## compute trees  
+     landoltia_tree = bionj(landoltia_hamdist)
+     landoltia_tree$edge.length[landoltia_tree$edge.length < 0] <- 0
+     landoltia_chronotree = chronos(landoltia_tree,control = chronos.control(iter.max = 1000), model="relaxed")
+     landoltia_chronotree$tip.label = substr(landoltia_chronotree$tip.label,1,3)
      
-     ## clone cutoff
-     abline(h=landoltia_clone_cutoff, lty=2)
-     text(0.2, landoltia_clone_cutoff+8, label="clone cutoff", cex=0.8, pos=4)
+     lemna_tree = bionj(lemna_hamdist)
+     lemna_tree$edge.length[lemna_tree$edge.length < 0] <- 0
+     lemna_chronotree = chronos(lemna_tree,control = chronos.control(iter.max = 1000), model="relaxed")
+     lemna_chronotree$tip.label = substr(lemna_chronotree$tip.label,1,3)
      
-     ## pond 10
-     points(runif(length(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]), min = 0.8, max = 1.2),
-            landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
-     points(1, mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(1,1), 
-           c(mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)])+sd(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]),
-             mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)])-sd(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)])),
-           lwd=2)
+     ## plot trees
      
-     ## pond 14
-     points(runif(length(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]), min = 1.8, max = 2.2),
-            landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
-     points(2, mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(2,2), 
-           c(mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)])+sd(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]),
-             mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)])-sd(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)])),
-           lwd=2)
-     
-     ## pond 19
-     points(runif(length(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]), min = 2.8, max = 3.2),
-            landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
-     points(3, mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(3,3), 
-           c(mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)])+sd(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]),
-             mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)])-sd(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)])),
-           lwd=2)
-     
-     ## pond 27
-     points(runif(length(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]), min = 3.8, max = 4.2),
-            landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
-     points(4, mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(4,4), 
-           c(mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)])+sd(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]),
-             mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)])-sd(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)])),
-           lwd=2)
-     
-     ## pond 36
-     points(runif(length(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]), min = 4.8, max = 5.2),
-            landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
-     points(5, mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(5,5), 
-           c(mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)])+sd(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]),
-             mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)])-sd(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)])),
-           lwd=2)
-     
-     # ## all data
-     # points(runif(length(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), min = 5.8, max = 6.2),
-     #        landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
-     # points(6, mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), pch=21, bg="black", cex=2)
-     # lines(c(6,6), 
-     #       c(mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])+sd(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]),
-     #         mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])-sd(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])),
-     #       lwd=2)
-     
-     ## random permutation means
-     perm_mean = vector()
-     perm_clone = vector()
-     perm_diversity = vector()
-     for (n in 1:100000) {
-       
-       runner_sample = sample(colnames(landoltia_hamdist), 22)
-       runner_matrix = landoltia_hamdist[runner_sample,runner_sample]
-       perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
-       perm_clone[n] = ncol(hamdist_to_rarecurve(runner_matrix))
-       perm_diversity[n] = diversity(hamdist_to_rarecurve(runner_matrix))
-     }
-     points(rep(6,100000), perm_mean)
-     abline(h=quantile(perm_mean, probs = c(0.001, 0.999)))
-     
-     hist(perm_clone)
-     hist(perm_diversity)
+     par(mfrow=c(1,2))
+     par(mar=c(0,0,0,0))
+     plot.phylo(landoltia_chronotree, cex=0.6, type = "fan", tip.color=ifelse(grepl("P10", landoltia_chronotree$tip.label), "red",
+                                                                              ifelse(grepl("P14", landoltia_chronotree$tip.label), "blue", 
+                                                                                     ifelse(grepl("P19", landoltia_chronotree$tip.label), "darkgreen",
+                                                                                            ifelse(grepl("P27", landoltia_chronotree$tip.label), "purple",
+                                                                                                   ifelse(grepl("P36", landoltia_chronotree$tip.label), "orange", "black")))))
+     )
+     par(mar=c(0,0,0,0))
+     plot.phylo(lemna_chronotree, cex=0.6, type = "fan", tip.color=ifelse(grepl("P10", lemna_chronotree$tip.label), "red",
+                                                                          ifelse(grepl("P14", lemna_chronotree$tip.label), "blue", 
+                                                                                 ifelse(grepl("P19", lemna_chronotree$tip.label), "darkgreen",
+                                                                                        ifelse(grepl("P27", lemna_chronotree$tip.label), "purple",
+                                                                                               ifelse(grepl("P36", lemna_chronotree$tip.label), "orange", "black")))))
+                                                                    
+     ) 
      
      
      
-     sd
+     ## Figure 5: PCAs ####
      
-     ## LEMNA within vs across pond diversity ####
+     WIP
      
-     ## subset the ponds   
-     lemna_p10 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P10"),which(substr(colnames(lemna_hamdist),1,3) == "P10")]
-     lemna_p14 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P14"),which(substr(colnames(lemna_hamdist),1,3) == "P14")]
-     lemna_p19 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P19"),which(substr(colnames(lemna_hamdist),1,3) == "P19")]
-     lemna_p27 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P27"),which(substr(colnames(lemna_hamdist),1,3) == "P27")]
-     lemna_p36 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P36"),which(substr(colnames(lemna_hamdist),1,3) == "P36")]
-     
-     ## draw and fill plot
-     plot(NULL, xlim=c(0.5,6.5), ylim=c(0,max(lemna_hamdist)), xlab="", ylab="Hamming distance",
-          main="Lemna: within and across pond diversity (OUTLIER NOT SHOWN)", xaxt = "n")
-     axis(1, at = 1:6, las=2, labels = c("Pond10", "Pond14", "Pond19", "Pond27", "Pond36", "all data"))
-     
-     ## clone cutoff
-     abline(h=lemna_clone_cutoff, lty=2)
-     text(0.2, lemna_clone_cutoff+8, label="clone cutoff", cex=0.8, pos=4)
-     
-     ## pond 10
-     points(runif(length(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]), min = 0.8, max = 1.2),
-            lemna_p10[lower.tri(lemna_p10, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
-     points(1, mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(1,1), 
-           c(mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)])+sd(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]),
-             mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)])-sd(lemna_p10[lower.tri(lemna_p10, diag=FALSE)])),
-           lwd=2)
-     
-     ## pond 14
-     points(runif(length(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]), min = 1.8, max = 2.2),
-            lemna_p14[lower.tri(lemna_p14, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
-     points(2, mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(2,2), 
-           c(mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)])+sd(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]),
-             mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)])-sd(lemna_p14[lower.tri(lemna_p14, diag=FALSE)])),
-           lwd=2)
-     
-     ## pond 19
-     points(runif(length(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]), min = 2.8, max = 3.2),
-            lemna_p19[lower.tri(lemna_p19, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
-     points(3, mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(3,3), 
-           c(mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)])+sd(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]),
-             mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)])-sd(lemna_p19[lower.tri(lemna_p19, diag=FALSE)])),
-           lwd=2)
-     
-     ## pond 27
-     points(runif(length(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]), min = 3.8, max = 4.2),
-            lemna_p27[lower.tri(lemna_p27, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
-     points(4, mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(4,4), 
-           c(mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)])+sd(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]),
-             mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)])-sd(lemna_p27[lower.tri(lemna_p27, diag=FALSE)])),
-           lwd=2)
-     
-     ## pond 36
-     points(runif(length(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]), min = 4.8, max = 5.2),
-            lemna_p36[lower.tri(lemna_p36, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
-     points(5, mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(5,5), 
-           c(mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)])+sd(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]),
-             mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)])-sd(lemna_p36[lower.tri(lemna_p36, diag=FALSE)])),
-           lwd=2)
-     
-     ## all data
-     points(runif(length(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]), min = 5.8, max = 6.2),
-            lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
-     points(6, mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]), pch=21, bg="black", cex=2)
-     lines(c(6,6), 
-           c(mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])+sd(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]),
-             mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])-sd(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])),
-           lwd=2)
-     
-     ## landoltia plot PCA ####
-
      ## transform file
      landoltia_final_pca = vcfR2genlight(landoltia_final)
      
-     par(mfrow=c(1,3))
+     par(mfrow=c(1,2))
      ## run and plot PCA
      no_missing_data = tab(landoltia_final_pca, NA.method = "mean")
      
      dudipca_result = dudi.pca(no_missing_data, scannf = FALSE, nf = 3)
      plot(dudipca_result$li[,1], dudipca_result$li[,2], 
           xlab = "PC1", ylab = "PC2",
-          main = "Landoltia ade4::dudi.pca()", pch = 19, col = "purple")
-     text(dudipca_result$li[,1], dudipca_result$li[,2], 
-          labels = rownames(dudipca_result$li), pos = 3, cex = 0.4, col="gray50")
+          main = "Landoltia ade4::dudi.pca()", pch = 19, 
+          col = ifelse(grepl("P10", rownames(dudipca_result$li)), "red",
+                       ifelse(grepl("P14", rownames(dudipca_result$li)), "blue", 
+                              ifelse(grepl("P19", rownames(dudipca_result$li)), "darkgreen",
+                                     ifelse(grepl("P27", rownames(dudipca_result$li)), "purple",
+                                            ifelse(grepl("P36", rownames(dudipca_result$li)), "orange", "black")))))
+          )
+     
      
      glpca_result = glPca(landoltia_final_pca, nf=3)
      plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
           xlab = "PC1", ylab = "PC2",
-          main = "Landoltia adegenet::glPca", pch = 19, col = "purple")
-     text(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
-          labels = rownames(glpca_result$scores), pos = 3, cex = 0.4, col="gray50")
+          main = "Landoltia adegenet::glPca", pch = 19, 
+          col = ifelse(grepl("P10", rownames(glpca_result$scores)), "red",
+                       ifelse(grepl("P14", rownames(glpca_result$scores)), "blue", 
+                              ifelse(grepl("P19", rownames(glpca_result$scores)), "darkgreen",
+                                     ifelse(grepl("P27", rownames(glpca_result$scores)), "purple",
+                                            ifelse(grepl("P36", rownames(glpca_result$scores)), "orange", "black")))))
+     )
      
-     lea_pca = LEA::pca(landoltia_final_geno)
-     plot(lea_pca$projections, main="landoltia LEA::pca", pch=19, col="purple")
      
      ## lemna plot PCA ####
 
@@ -1192,30 +1070,6 @@
           labels = bp$order, las=1,
           cex.axis = .4)
      
-     ## trees ####
-     
-     tree = bionj(landoltia_hamdist)
-     tree$edge.length[tree$edge.length < 0] <- 0
-     chronotree = chronos(tree,control = chronos.control(iter.max = 1000), model="relaxed")
-     plot.phylo(chronotree, cex=0.4, type = "fan", tip.color=ifelse(grepl("P10", tree$tip.label), "red", 
-                                                                    ifelse(grepl("P14", tree$tip.label), "blue", 
-                                                                           ifelse(grepl("P19", tree$tip.label), "darkgreen",
-                                                                                  ifelse(grepl("P27", tree$tip.label), "purple",
-                                                                                         ifelse(grepl("P36", tree$tip.label), "orange", "black")))))
-                
-     )
-     
-     tree = bionj(lemna_hamdist)
-     tree$edge.length[tree$edge.length < 0] <- 0
-     chronotree = chronos(tree,control = chronos.control(iter.max = 1000), model="relaxed")
-     plot.phylo(chronotree, cex=0.4, type = "fan", tip.color=ifelse(grepl("P10", tree$tip.label), "red", 
-                                                                    ifelse(grepl("P14", tree$tip.label), "blue", 
-                                                                           ifelse(grepl("P19", tree$tip.label), "darkgreen",
-                                                                                  ifelse(grepl("P27", tree$tip.label), "purple",
-                                                                                         ifelse(grepl("P36", tree$tip.label), "orange", "black")))))
-                
-     )
-       
      ## rarefaction curves ####
      
      landoltia_pond10 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P10")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P10"))]      
@@ -2344,5 +2198,173 @@
      abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
      
      
+     
+     
+     ## LANDOLTIA within vs across pond diversity ####
+     
+     ## subset the ponds   
+     landoltia_p10 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P10"),which(substr(colnames(landoltia_hamdist),1,3) == "P10")]
+     landoltia_p14 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P14"),which(substr(colnames(landoltia_hamdist),1,3) == "P14")]
+     landoltia_p19 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P19"),which(substr(colnames(landoltia_hamdist),1,3) == "P19")]
+     landoltia_p27 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P27"),which(substr(colnames(landoltia_hamdist),1,3) == "P27")]
+     landoltia_p36 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P36"),which(substr(colnames(landoltia_hamdist),1,3) == "P36")]
+     
+     ## draw and fill plot
+     plot(NULL, xlim=c(0.5,6.5), ylim=c(0,max(landoltia_hamdist)), xlab="", ylab="Hamming distance",
+          main="Landoltia: within and across pond diversity", xaxt = "n")
+     axis(1, at = 1:6, las=2, labels = c("Pond10", "Pond14", "Pond19", "Pond27", "Pond36", "all data"))
+     
+     ## clone cutoff
+     abline(h=landoltia_clone_cutoff, lty=2)
+     text(0.2, landoltia_clone_cutoff+8, label="clone cutoff", cex=0.8, pos=4)
+     
+     ## pond 10
+     points(runif(length(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]), min = 0.8, max = 1.2),
+            landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
+     points(1, mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(1,1), 
+           c(mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)])+sd(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]),
+             mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)])-sd(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)])),
+           lwd=2)
+     
+     ## pond 14
+     points(runif(length(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]), min = 1.8, max = 2.2),
+            landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
+     points(2, mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(2,2), 
+           c(mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)])+sd(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]),
+             mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)])-sd(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)])),
+           lwd=2)
+     
+     ## pond 19
+     points(runif(length(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]), min = 2.8, max = 3.2),
+            landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
+     points(3, mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(3,3), 
+           c(mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)])+sd(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]),
+             mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)])-sd(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)])),
+           lwd=2)
+     
+     ## pond 27
+     points(runif(length(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]), min = 3.8, max = 4.2),
+            landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
+     points(4, mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(4,4), 
+           c(mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)])+sd(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]),
+             mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)])-sd(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)])),
+           lwd=2)
+     
+     ## pond 36
+     points(runif(length(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]), min = 4.8, max = 5.2),
+            landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
+     points(5, mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(5,5), 
+           c(mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)])+sd(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]),
+             mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)])-sd(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)])),
+           lwd=2)
+     
+     # ## all data
+     # points(runif(length(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), min = 5.8, max = 6.2),
+     #        landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)], pch=19, col=scales::alpha("purple",0.1))
+     # points(6, mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), pch=21, bg="black", cex=2)
+     # lines(c(6,6), 
+     #       c(mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])+sd(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]),
+     #         mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])-sd(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])),
+     #       lwd=2)
+     
+     ## random permutation means
+     perm_mean = vector()
+     perm_clone = vector()
+     perm_diversity = vector()
+     for (n in 1:100000) {
+       
+       runner_sample = sample(colnames(landoltia_hamdist), 22)
+       runner_matrix = landoltia_hamdist[runner_sample,runner_sample]
+       perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
+       perm_clone[n] = ncol(hamdist_to_rarecurve(runner_matrix))
+       perm_diversity[n] = diversity(hamdist_to_rarecurve(runner_matrix))
+     }
+     points(rep(6,100000), perm_mean)
+     abline(h=quantile(perm_mean, probs = c(0.001, 0.999)))
+     
+     hist(perm_clone)
+     hist(perm_diversity)
+     
+     
+     
+     sd
+     
+     
+     ## LEMNA within vs across pond diversity ####
+     
+     ## subset the ponds   
+     lemna_p10 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P10"),which(substr(colnames(lemna_hamdist),1,3) == "P10")]
+     lemna_p14 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P14"),which(substr(colnames(lemna_hamdist),1,3) == "P14")]
+     lemna_p19 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P19"),which(substr(colnames(lemna_hamdist),1,3) == "P19")]
+     lemna_p27 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P27"),which(substr(colnames(lemna_hamdist),1,3) == "P27")]
+     lemna_p36 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P36"),which(substr(colnames(lemna_hamdist),1,3) == "P36")]
+     
+     ## draw and fill plot
+     plot(NULL, xlim=c(0.5,6.5), ylim=c(0,max(lemna_hamdist)), xlab="", ylab="Hamming distance",
+          main="Lemna: within and across pond diversity (OUTLIER NOT SHOWN)", xaxt = "n")
+     axis(1, at = 1:6, las=2, labels = c("Pond10", "Pond14", "Pond19", "Pond27", "Pond36", "all data"))
+     
+     ## clone cutoff
+     abline(h=lemna_clone_cutoff, lty=2)
+     text(0.2, lemna_clone_cutoff+8, label="clone cutoff", cex=0.8, pos=4)
+     
+     ## pond 10
+     points(runif(length(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]), min = 0.8, max = 1.2),
+            lemna_p10[lower.tri(lemna_p10, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
+     points(1, mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(1,1), 
+           c(mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)])+sd(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]),
+             mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)])-sd(lemna_p10[lower.tri(lemna_p10, diag=FALSE)])),
+           lwd=2)
+     
+     ## pond 14
+     points(runif(length(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]), min = 1.8, max = 2.2),
+            lemna_p14[lower.tri(lemna_p14, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
+     points(2, mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(2,2), 
+           c(mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)])+sd(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]),
+             mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)])-sd(lemna_p14[lower.tri(lemna_p14, diag=FALSE)])),
+           lwd=2)
+     
+     ## pond 19
+     points(runif(length(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]), min = 2.8, max = 3.2),
+            lemna_p19[lower.tri(lemna_p19, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
+     points(3, mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(3,3), 
+           c(mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)])+sd(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]),
+             mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)])-sd(lemna_p19[lower.tri(lemna_p19, diag=FALSE)])),
+           lwd=2)
+     
+     ## pond 27
+     points(runif(length(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]), min = 3.8, max = 4.2),
+            lemna_p27[lower.tri(lemna_p27, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
+     points(4, mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(4,4), 
+           c(mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)])+sd(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]),
+             mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)])-sd(lemna_p27[lower.tri(lemna_p27, diag=FALSE)])),
+           lwd=2)
+     
+     ## pond 36
+     points(runif(length(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]), min = 4.8, max = 5.2),
+            lemna_p36[lower.tri(lemna_p36, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
+     points(5, mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(5,5), 
+           c(mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)])+sd(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]),
+             mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)])-sd(lemna_p36[lower.tri(lemna_p36, diag=FALSE)])),
+           lwd=2)
+     
+     ## all data
+     points(runif(length(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]), min = 5.8, max = 6.2),
+            lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)], pch=19, col=scales::alpha("darkgreen",0.1))
+     points(6, mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]), pch=21, bg="black", cex=2)
+     lines(c(6,6), 
+           c(mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])+sd(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]),
+             mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])-sd(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])),
+           lwd=2)
      
      
