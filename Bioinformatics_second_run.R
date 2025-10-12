@@ -12,6 +12,7 @@
      library(SNPfiltR)
      library(vcfR)
      library(dartR)
+     library(SNPRelate) ## PCA
      
      ## custom functions #### 
      
@@ -954,62 +955,154 @@
      
      ## Figure 5: PCAs ####
      
-     WIP
+     ## LANDOLTIA
      
-     ## transform file
-     landoltia_final_pca = vcfR2genlight(landoltia_final)
+         ## transform file
+         landoltia_final_pca = vcfR2genlight(landoltia_final)
+         
+         par(mfrow=c(2,2))
+         ## run and plot PCA
+         landoltia_no_missing_data = tab(landoltia_final_pca, NA.method = "mean")
+         
+         dudipca_result = dudi.pca(landoltia_no_missing_data, scannf = FALSE, nf = 3)
+         plot(dudipca_result$li[,1], dudipca_result$li[,2], 
+              xlab = paste0("PC1 (", round((dudipca_result$eig[1] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+              ylab = paste0("PC2 (", round((dudipca_result$eig[2] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+              main = "Landoltia ade4::dudi.pca()", pch = 19, 
+              col = ifelse(grepl("P10", rownames(dudipca_result$li)), "red",
+                           ifelse(grepl("P14", rownames(dudipca_result$li)), "blue", 
+                                  ifelse(grepl("P19", rownames(dudipca_result$li)), "darkgreen",
+                                         ifelse(grepl("P27", rownames(dudipca_result$li)), "purple",
+                                                ifelse(grepl("P36", rownames(dudipca_result$li)), "orange", "black")))))
+              )
+         
+         glpca_result = glPca(landoltia_final_pca, nf=3)
+         plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
+              xlab = paste0("PC1 (", round((glpca_result$eig[1] / sum(glpca_result$eig)) * 100,2),"%)", sep=""), 
+              ylab = paste0("PC1 (", round((glpca_result$eig[2] / sum(glpca_result$eig)) * 100,2),"%)", sep=""),
+              main = "Landoltia adegenet::glPca", pch = 19, 
+              col = ifelse(grepl("P10", rownames(glpca_result$scores)), "red",
+                           ifelse(grepl("P14", rownames(glpca_result$scores)), "blue", 
+                                  ifelse(grepl("P19", rownames(glpca_result$scores)), "darkgreen",
+                                         ifelse(grepl("P27", rownames(glpca_result$scores)), "purple",
+                                                ifelse(grepl("P36", rownames(glpca_result$scores)), "orange", "black")))))
+         )
+         
+         ## transform to DGS from VCF
+         snpgdsVCF2GDS("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/landoltia_final.vcf",
+                       out.fn="GDS_for_SNPRelate")
+         landoltia_final_gds = snpgdsOpen("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/GDS_for_SNPRelate")
+         
+         ## compute PCA
+         snprelate_result = snpgdsPCA(landoltia_final_gds)
+         
+         snpgdsClose(landoltia_final_gds)
+         
+         ## transform for plotting
+         snprelate_plotter = data.frame(sample.id = substr(snprelate_result$sample.id,1,3),
+                                        EV1 = snprelate_result$eigenvect[,1],    # the first eigenvector
+                                        EV2 = snprelate_result$eigenvect[,2],    # the second eigenvector
+                                        stringsAsFactors = FALSE)
+         
+         ## assemble plot                                
+         plot(snprelate_plotter$EV2, snprelate_plotter$EV1, 
+              xlab=paste0("PC1 (", round(snprelate_result$varprop[1]*100,2),"%)", sep=""), 
+              ylab=paste0("PC2 (", round(snprelate_result$varprop[2]*100,2),"%)", sep=""),
+              main="Landoltia SNPRelate::snprgdsPCA",
+              pch=19, col = ifelse(grepl("P10", snprelate_plotter$sample.id), "red",
+                                   ifelse(grepl("P14", snprelate_plotter$sample.id), "blue", 
+                                          ifelse(grepl("P19", snprelate_plotter$sample.id), "darkgreen",
+                                                 ifelse(grepl("P27", snprelate_plotter$sample.id), "purple",
+                                                        ifelse(grepl("P36", snprelate_plotter$sample.id), "orange", "black")))))
+         )
+         
+         ## compute PCA
+         ASRgenomics_result = snp.pca(landoltia_no_missing_data)
+         plot(ASRgenomics_result$pca.scores[,"PC1"],ASRgenomics_result$pca.scores[,"PC2"],
+              xlab=paste0("PC1 (", round(ASRgenomics_result$eigenvalues[1,2],2),"%)", sep=""), 
+              ylab=paste0("PC2 (", round(ASRgenomics_result$eigenvalues[2,2],2),"%)", sep=""),
+              main="Landoltia ASRgenomics::scp.pca",
+              pch=19, col = ifelse(grepl("P10", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "red",
+                                   ifelse(grepl("P14", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "blue", 
+                                          ifelse(grepl("P19", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "darkgreen",
+                                                 ifelse(grepl("P27", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "purple",
+                                                        ifelse(grepl("P36", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "orange", "black")))))
+         )
      
-     par(mfrow=c(1,2))
-     ## run and plot PCA
-     no_missing_data = tab(landoltia_final_pca, NA.method = "mean")
+     ## LEMNA
      
-     dudipca_result = dudi.pca(no_missing_data, scannf = FALSE, nf = 3)
-     plot(dudipca_result$li[,1], dudipca_result$li[,2], 
-          xlab = "PC1", ylab = "PC2",
-          main = "Landoltia ade4::dudi.pca()", pch = 19, 
-          col = ifelse(grepl("P10", rownames(dudipca_result$li)), "red",
-                       ifelse(grepl("P14", rownames(dudipca_result$li)), "blue", 
-                              ifelse(grepl("P19", rownames(dudipca_result$li)), "darkgreen",
-                                     ifelse(grepl("P27", rownames(dudipca_result$li)), "purple",
-                                            ifelse(grepl("P36", rownames(dudipca_result$li)), "orange", "black")))))
-          )
-     
-     
-     glpca_result = glPca(landoltia_final_pca, nf=3)
-     plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
-          xlab = "PC1", ylab = "PC2",
-          main = "Landoltia adegenet::glPca", pch = 19, 
-          col = ifelse(grepl("P10", rownames(glpca_result$scores)), "red",
-                       ifelse(grepl("P14", rownames(glpca_result$scores)), "blue", 
-                              ifelse(grepl("P19", rownames(glpca_result$scores)), "darkgreen",
-                                     ifelse(grepl("P27", rownames(glpca_result$scores)), "purple",
-                                            ifelse(grepl("P36", rownames(glpca_result$scores)), "orange", "black")))))
-     )
-     
-     
-     ## lemna plot PCA ####
-
-     ## transform file
-     lemna_final_pca = vcfR2genlight(lemna_final)
-     
-     par(mfrow=c(1,2))
-     ## run and plot PCA
-     no_missin_data = tab(lemna_final_pca, NA.method = "mean")
-     dudipca_result = dudi.pca(no_missin_data, scannf = FALSE, nf = 3)
-     plot(dudipca_result$li[,1], dudipca_result$li[,2], 
-          xlab = "PC1", ylab = "PC2",
-          main = "Lemna ade4::dudi.pca()", pch = 19, col = "darkgreen")
-     text(dudipca_result$li[,1], dudipca_result$li[,2], 
-          labels = rownames(dudipca_result$li), pos = 3, cex = 0.4, col="gray50")
-     
-     glpca_result = glPca(lemna_final_pca, nf=3)
-     plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
-          xlab = "PC1", ylab = "PC2",
-          main = "Lemna adegenet::glPca", pch = 19, col = "darkgreen")
-     text(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
-          labels = rownames(glpca_result$scores), pos = 3, cex = 0.4, col="gray50")
-     
-     
+         ## transform file
+         lemna_final_pca = vcfR2genlight(lemna_final)
+         
+         par(mfrow=c(2,2))
+         ## run and plot PCA
+         lemna_no_missing_data = tab(lemna_final_pca, NA.method = "mean")
+         
+         dudipca_result = dudi.pca(lemna_no_missing_data, scannf = FALSE, nf = 3)
+         plot(dudipca_result$li[,1], dudipca_result$li[,2], 
+              xlab = paste0("PC1 (", round((dudipca_result$eig[1] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+              ylab = paste0("PC2 (", round((dudipca_result$eig[2] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+              main = "Lemna ade4::dudi.pca()", pch = 19, 
+              col = ifelse(grepl("P10", rownames(dudipca_result$li)), "red",
+                           ifelse(grepl("P14", rownames(dudipca_result$li)), "blue", 
+                                  ifelse(grepl("P19", rownames(dudipca_result$li)), "darkgreen",
+                                         ifelse(grepl("P27", rownames(dudipca_result$li)), "purple",
+                                                ifelse(grepl("P36", rownames(dudipca_result$li)), "orange", "black")))))
+         )
+         
+         glpca_result = glPca(lemna_final_pca, nf=3)
+         plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
+              xlab = paste0("PC1 (", round((glpca_result$eig[1] / sum(glpca_result$eig)) * 100,2),"%)", sep=""), 
+              ylab = paste0("PC1 (", round((glpca_result$eig[2] / sum(glpca_result$eig)) * 100,2),"%)", sep=""),
+              main = "Lemna adegenet::glPca", pch = 19, 
+              col = ifelse(grepl("P10", rownames(glpca_result$scores)), "red",
+                           ifelse(grepl("P14", rownames(glpca_result$scores)), "blue", 
+                                  ifelse(grepl("P19", rownames(glpca_result$scores)), "darkgreen",
+                                         ifelse(grepl("P27", rownames(glpca_result$scores)), "purple",
+                                                ifelse(grepl("P36", rownames(glpca_result$scores)), "orange", "black")))))
+         )
+         
+         ## transform to DGS from VCF
+         snpgdsVCF2GDS("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/lemna_final.vcf",
+                       out.fn="GDS_for_SNPRelate")
+         lemna_final_gds = snpgdsOpen("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/GDS_for_SNPRelate")
+         
+         ## compute PCA
+         snprelate_result = snpgdsPCA(lemna_final_gds)
+         
+         snpgdsClose(lemna_final_gds)
+         
+         ## transform for plotting
+         snprelate_plotter = data.frame(sample.id = substr(snprelate_result$sample.id,1,3),
+                                        EV1 = snprelate_result$eigenvect[,1],    # the first eigenvector
+                                        EV2 = snprelate_result$eigenvect[,2],    # the second eigenvector
+                                        stringsAsFactors = FALSE)
+         
+         ## assemble plot                                
+         plot(snprelate_plotter$EV2, snprelate_plotter$EV1, 
+              xlab=paste0("PC1 (", round(snprelate_result$varprop[1]*100,2),"%)", sep=""), 
+              ylab=paste0("PC2 (", round(snprelate_result$varprop[2]*100,2),"%)", sep=""),
+              main="Lemna SNPRelate::snprgdsPCA",
+              pch=19, col = ifelse(grepl("P10", snprelate_plotter$sample.id), "red",
+                                   ifelse(grepl("P14", snprelate_plotter$sample.id), "blue", 
+                                          ifelse(grepl("P19", snprelate_plotter$sample.id), "darkgreen",
+                                                 ifelse(grepl("P27", snprelate_plotter$sample.id), "purple",
+                                                        ifelse(grepl("P36", snprelate_plotter$sample.id), "orange", "black")))))
+         )
+         
+         ## compute PCA
+         ASRgenomics_result = snp.pca(lemna_no_missing_data)
+         plot(ASRgenomics_result$pca.scores[,"PC1"],ASRgenomics_result$pca.scores[,"PC2"],
+              xlab=paste0("PC1 (", round(ASRgenomics_result$eigenvalues[1,2],2),"%)", sep=""), 
+              ylab=paste0("PC2 (", round(ASRgenomics_result$eigenvalues[2,2],2),"%)", sep=""),
+              main="Lemna ASRgenomics::scp.pca",
+              pch=19, col = ifelse(grepl("P10", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "red",
+                                   ifelse(grepl("P14", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "blue", 
+                                          ifelse(grepl("P19", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "darkgreen",
+                                                 ifelse(grepl("P27", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "purple",
+                                                        ifelse(grepl("P36", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "orange", "black")))))
+         )
+         
      ## landoltia population structure with LEA ####
      
      ## transform data
@@ -2366,5 +2459,29 @@
            c(mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])+sd(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]),
              mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])-sd(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])),
            lwd=2)
+     
+     
+     ## lemna plot PCA ####
+     
+     ## transform file
+     lemna_final_pca = vcfR2genlight(lemna_final)
+     
+     par(mfrow=c(1,2))
+     ## run and plot PCA
+     no_missin_data = tab(lemna_final_pca, NA.method = "mean")
+     dudipca_result = dudi.pca(no_missin_data, scannf = FALSE, nf = 3)
+     plot(dudipca_result$li[,1], dudipca_result$li[,2], 
+          xlab = "PC1", ylab = "PC2",
+          main = "Lemna ade4::dudi.pca()", pch = 19, col = "darkgreen")
+     text(dudipca_result$li[,1], dudipca_result$li[,2], 
+          labels = rownames(dudipca_result$li), pos = 3, cex = 0.4, col="gray50")
+     
+     glpca_result = glPca(lemna_final_pca, nf=3)
+     plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
+          xlab = "PC1", ylab = "PC2",
+          main = "Lemna adegenet::glPca", pch = 19, col = "darkgreen")
+     text(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
+          labels = rownames(glpca_result$scores), pos = 3, cex = 0.4, col="gray50")
+     
      
      
