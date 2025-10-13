@@ -1103,6 +1103,115 @@
                                                         ifelse(grepl("P36", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "orange", "black")))))
          )
          
+     ## FIGURE X: triplet sampling ####
+     
+     ## landoltia triplets    
+     landoltia_same_location = data.frame(site1 = c("P1S2",NA,NA),
+                                          site2 = c("P2S2",NA,NA),
+                                          site3 = c("P4S2",NA,NA),
+                                          site4 = c("P10S1b", "P10S3b", NA),
+                                          site5 = c("P10S3",NA,NA),
+                                          site6 = c("P10S4","P10S6", NA),
+                                          site7 = c("P10S4b",NA, NA),
+                                          site8 = c("P10S7b", "P10S8b", "P10S9b"),
+                                          site9 = c("P10S10b", "P10S11b", "P10S12b"),
+                                          site10 = c("P10S13b","P10S14b", "P10S15b"),
+                                          site11 = c("P10S16", "P10S18", NA),
+                                          site12 = c("P10S22", "P10S23", NA),
+                                          site13 = c("P10S26", NA, NA),
+                                          site14 = c("P10S31", NA, NA),
+                                          site15 = c("P11S10", "P11S11", "P11S12"),
+                                          site16 = c("P12S4", "P12S5", "P12S6"),
+                                          site17 = c("P13S1", "P13S2", "P13S3"),
+                                          site18 = c("P14S1", NA, NA),
+                                          site19 = c("P14S7", "P14S8", "P14S9"),
+                                          site20 = c("P14S12", "P14S13", NA),
+                                          site21 = c("P14S16", "P14S17", "P14S18"),
+                                          site22 = c("P14S22", "P14S23", "P14S24"),
+                                          site23 = c("P14S28", "P14S29", "P14S30"),
+                                          site24 = c("P14S37", "P14S38", "P14S39"),
+                                          site25 = c("P14S40", "P14S42", NA),
+                                          site26 = c("P14S46", "P14S47", "P14S48"),
+                                          site27 = c("P15S1", "P15S2", "P15S3"),
+                                          site28 = c("P16S4", "P16S5", "P16S6"),
+                                          site29 = c("P17S4", "P17S6", NA),
+                                          site30 = c("P18S4", "P18S6", NA),
+                                          site31 = c("P19S4", "P19S5", NA),
+                                          site32 = c("P19S10", "P19S11", NA),
+                                          site33 = c("P19S16", "P19S17", "P19S18"),
+                                          site34 = c("P19S22", "P19S23", "P19S24"),
+                                          site35 = c("P19S25", "P19S26", "P19S27"),
+                                          site36 = c("P19S34", "P19S35", "P19S36"),
+                                          site37 = c("P19S40", "P19S41", "P19S42"),
+                                          site38 = c("P19S43", "P19S44", "P19S45"),
+                                          site39 = c("P19S52", "P19S53", "P19S54"),
+                                          site40 = c("P20S1", "P20S2", "P20S3"),
+                                          site41 = c("P22S1", "P22S2", "P22S3"),
+                                          site42 = c("P23S4", NA, NA),
+                                          site43 = c("P23S5", NA, NA),
+                                          site44 = c("P24S1", "P24S2", "P24S3"),
+                                          site45 = c("P25S1", "P25S2", "P25S3"),
+                                          site46 = c("P26S1", "P26S2", "P26S3"),
+                                          site47 = c("P27S1", "P27S2", "P27S3"),
+                                          site48 = c("P27S7", "P27S8", "P27S9"),
+                                          site49 = c("P27S13", "P27S14", "P27S15"),
+                                          site50 = c("P27S22", "P27S23", "P27S24"),
+                                          site51 = c("P27S26", "P27S28", NA),
+                                          site52 = c("P27S30", "P27S31", "P27S32"),
+                                          site53 = c("P27S33", "P27S34", "P27S35"),
+                                          site54 = c("P27S36", "P27S37", "P27S38"),
+                                          site55 = c("P27S49", "P27S51", NA),
+                                          site56 = c("P28S1", "P28S2", "P28S3"),
+                                          site57 = c("P32S1", "P32S2", "P32S3"),
+                                          site58 = c("P34S1", "P34S2", "P34S3"),
+                                          site59 = c("P36S1", "P36S2", "P36S3"),
+                                          site60 = c("P36S7", "P36S8", "P36S9"),
+                                          site61 = c("P36S16", "P36S17", "P36S18"),
+                                          site62 = c("P36S19", "P36S20", "P36S21"),
+                                          site63 = c("P36S25", "P36S26", "P36S27"),
+                                          site64 = c("P36S34", "P36S35", "P36S36"),
+                                          site65 = c("P36S40", "P36S41", NA))
+         
+                          
+     ## identify sites with 2 and 3 plants 
+     landoltia_sites_with_two_or_more = as.vector(which(apply(apply(landoltia_same_location, 2, function(x) is.na(x)), 2, sum) != 2))
+     
+     ## remove singles
+     landoltia_same_location = landoltia_same_location[,c(landoltia_sites_with_two_or_more)]
+     
+     landoltia_saver = list()   
+     for (n in 1:ncol(landoltia_same_location)) {
+       
+       runner_matrix = landoltia_hamdist[which(colnames(landoltia_hamdist) %in% landoltia_same_location[,n]),which(colnames(landoltia_hamdist) %in% landoltia_same_location[,n]), drop=FALSE]
+       landoltia_saver[[n]] = runner_matrix[lower.tri(runner_matrix, diag=FALSE)]
+       
+     }    
+    
+     ## compute histograms with equal bins
+     breaks = pretty(range(c(0,max(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]))), n = 30)
+     landoltia_local_samples = hist(unlist(landoltia_saver), breaks = breaks, plot = FALSE)
+     landoltia_global_samples = hist(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)], breaks = breaks, plot = FALSE)
+     
+     # assemble triplet plot
+     plot(landoltia_local_samples,
+          col = scales::alpha("red", 0.5),
+          xlab = "Genetic distance",
+          ylab = "", main="",
+          ylim = c(0, max(landoltia_local_samples$counts)),
+          xlim = c(0, max(landoltia_hamdist+0.02)))
+     axis(side=2, col.axis="red")
+     
+     ## add second histogram
+     par(new = TRUE)
+     plot(landoltia_global_samples,
+          col = scales::alpha("blue", 0.5),
+          axes = FALSE, xlab = "", ylab = "", main = "",
+          ylim = c(0, max(landoltia_global_samples$counts)),
+          xlim = c(0, max(landoltia_hamdist+0.02)))
+     axis(side = 4, col.axis="blue")
+    
+     sd
+     
      ## landoltia population structure with LEA ####
      
      ## transform data
