@@ -13,6 +13,7 @@
      library(vcfR)
      library(dartR)
      library(SNPRelate) ## PCA
+     library(ASRgenomics) ## PCA
      
      ## custom functions #### 
      
@@ -593,6 +594,95 @@
      
      
 ## DATA VISUALISATION / RESULTS ####
+     ## Numbers for M&M ####
+     
+     micro_sites = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/micro_sites.csv", sep=";")
+     
+     length(unique(micro_sites[,"micro_site_ID"]))
+     
+     length(which((substr(colnames(landoltia_hamdist),1,3)) == "P10"))
+     length(which((substr(colnames(landoltia_hamdist),1,3)) == "P14"))
+     length(which((substr(colnames(landoltia_hamdist),1,3)) == "P19"))
+     length(which((substr(colnames(landoltia_hamdist),1,3)) == "P27"))
+     length(which((substr(colnames(landoltia_hamdist),1,3)) == "P36"))
+     
+     length(which((substr(colnames(lemna_hamdist),1,3)) == "P10"))
+     length(which((substr(colnames(lemna_hamdist),1,3)) == "P14"))
+     length(which((substr(colnames(lemna_hamdist),1,3)) == "P19"))
+     length(which((substr(colnames(lemna_hamdist),1,3)) == "P27"))
+     length(which((substr(colnames(lemna_hamdist),1,3)) == "P36"))
+     
+     
+     
+     
+     
+     length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P10"),][,"micro_site_ID"]))
+     length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P14"),][,"micro_site_ID"]))
+     length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P19"),][,"micro_site_ID"]))
+     length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P27"),][,"micro_site_ID"]))
+     length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P36"),][,"micro_site_ID"]))
+     
+     ## waterbody df
+     shared_waterbodies = data.frame(P1 = "landoltia",
+                                     P2 = "landoltia",
+                                     P4 = "landoltia",
+                                     P5 = "lemna",
+                                     P6 = "both",
+                                     P7 = "lemna",
+                                     P10 = "both",
+                                     P11 = "both",
+                                     P12 = "landoltia",
+                                     P13 = "landoltia",
+                                     P14 = "both",
+                                     P15 = "both",
+                                     P16 = "both",
+                                     P17 = "both",
+                                     P18 = "both",
+                                     P19 = "both",
+                                     P20 = "landoltia",
+                                     P21 = "lemna",
+                                     P22 = "both",
+                                     P23 = "both",
+                                     P24 = "landoltia",
+                                     P25 = "landoltia",
+                                     P26 = "landoltia",
+                                     P27 = "both",
+                                     P28 = "both",
+                                     P30 = "lemna",
+                                     P31 = "lemna",
+                                     P32 = "both",
+                                     P33 = "lemna",
+                                     P34 = "both",
+                                     P35 = "lemna",
+                                     P36 = "both")
+      
+     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P10"))
+     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P14"))
+     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P19"))
+     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P27"))
+     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P36"))
+     
+     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P10"))
+     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P14"))
+     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P19"))
+     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P27"))
+     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P36"))
+     
+     library(readxl)
+     sampling_data = read_xlsx("C:/Users/timte/Desktop/Brisbane/Chapter 1/Duckweed collection 30.12.2024 - for material methods.xlsx")
+     sampling_data = as.data.frame(sampling_data)
+     
+     range(as.numeric(sampling_data[,"DNA_fronds"]), na.rm=TRUE)
+                
+     
+     sort(unique(sampling_data[,"ID"]))
+     nrow(sampling_data)
+     
+     
+     
+     nrow(sampling_data)
+     
+     sd
      ## FIGURE 1: Kinship Heatmaps ####
      
      ## LANDOLTIA
@@ -1105,7 +1195,9 @@
          
      ## FIGURE X: triplet sampling ####
      
-     ## landoltia triplets    
+     par(mfrow=c(1,2))
+     
+     ## LANDOLTIA triplets    
      landoltia_same_location = data.frame(site1 = c("P1S2",NA,NA),
                                           site2 = c("P2S2",NA,NA),
                                           site3 = c("P4S2",NA,NA),
@@ -1115,7 +1207,7 @@
                                           site7 = c("P10S4b",NA, NA),
                                           site8 = c("P10S7b", "P10S8b", "P10S9b"),
                                           site9 = c("P10S10b", "P10S11b", "P10S12b"),
-                                          site10 = c("P10S13b","P10S14b", "P10S15b"),
+                                          site10 = c("P10S13b","P10S14b", NA),
                                           site11 = c("P10S16", "P10S18", NA),
                                           site12 = c("P10S22", "P10S23", NA),
                                           site13 = c("P10S26", NA, NA),
@@ -1172,6 +1264,75 @@
                                           site64 = c("P36S34", "P36S35", "P36S36"),
                                           site65 = c("P36S40", "P36S41", NA))
          
+     
+     
+     ## LEMNA triplets
+     lemna_same_location = data.frame(site2 = c("P5S1", NA, NA),
+                                      site3 = c("P6S1", "P6S3",NA),
+                                      site4 = c("P7S1", "P7S2", "P7S3"),
+                                      site5 = c("P10S1", "P10S2", NA),
+                                      site6 = c("P10S2b", NA, NA),
+                                      site7 = c("P10S5", NA, NA),
+                                      site8 = c("P10S5b", "P10S6b", NA),
+                                      site9 = c("P10S7", "P10S8", "P10S9"),
+                                      site10 = c("P10S10", "P10S11", "P10S12"),
+                                      site11 = c("P10S13", "P10S14", NA),
+                                      site12 = c("P10S15b", NA, NA),
+                                      site13 = c("P10S19", "P10S20", "P10S21"),
+                                      site14 = c("P10S28", "P10S30",NA),
+                                      site15 = c("P11S7", "P11S8", "P11S9"),
+                                      site16 = c("P14S10", "P14S11", NA),
+                                      site17 = c("P14S15", NA, NA),
+                                      site18 = c("P14S19", "P14S20", "P14S21"),
+                                      site19 = c("P14S25", "P14S26", "P14S27"),
+                                      site20 = c("P14S31", "P14S32", NA),
+                                      site21 = c("P14S34", "P14S35", "P14S36"),
+                                      site22 = c("P14S43", "P14S44", "P14S45"),
+                                      site23 = c("P14S49", "P14S50", NA),
+                                      site24 = c("P14S55", "P14S56", "P14S57"),
+                                      site25 = c("P16S2", "P16S3", NA),
+                                      site26 = c("P17S1", "P17S2", "P17S3"),
+                                      site27 = c("P18S2", NA, NA),
+                                      site28 = c("P19S1", "P19S2", "P19S3"),
+                                      site29 = c("P19S7", "P19S8", "P19S9"),
+                                      site30 = c("P19S13", "P19A14", "P19S15"),
+                                      site31 = c("P19S19", "P19S20", "P19S21"),
+                                      site32 = c("P19S28", "P19S29", "P19S30"),
+                                      site33 = c("P19S31", "P19S32", "P19S33"),
+                                      site34 = c("P19S37", "P19S38", "P19S39"),
+                                      site35 = c("P19S46", "P19S47", "P19S48"),
+                                      site36 = c("P19S49", "P19S50", "P19S51"),
+                                      site37 = c("P21S1","P21S2", NA),
+                                      site38 = c("P22S4", "P22S6",NA),
+                                      site39 = c("P23S3", NA, NA),
+                                      site40 = c("P27S4", "P27S5", NA),
+                                      site41 = c("P27S10", "P27S11", "P27S12"),
+                                      site42 = c("P27S16", "P27S17", "P27S18"),
+                                      site43 = c("P27S19", "P27S20", "P27S21"),
+                                      site44 = c("P27S25", "P27S27", NA),
+                                      site45 = c("P27S39", "P27S40", "P27S41"),
+                                      site46 = c("P27S42", NA, NA),
+                                      site47 = c("P27S43", "P27S44", "P27S45"),
+                                      site48 = c("P27S46", "P27S47", "P27S48"),
+                                      site49 = c("P27S52", NA, NA),
+                                      site50 = c("P28S4", "P28S5", "P28S6"),
+                                      site51 = c("P30S1", "P30S2", "P30S3"),
+                                      site52 = c("P31S1", "P31S2", "P31S3"),
+                                      site53 = c("P32S4", "P32S5", "P32S6"),
+                                      site54 = c("P33S1", "P33S2", "P33S3"),
+                                      site55 = c("P34S5", "P34S6", NA),
+                                      site56 = c("P35S2", "P35S3", NA),
+                                      site57 = c("P36S4", "P36S5", "P36S6"),
+                                      site58 = c("P36S10", "P36S11", "P36S12"),
+                                      site59 = c("P36S13", "P36S14", "P36S15"),
+                                      site60 = c("P36S22", "P36S23", "P36S24"),
+                                      site61 = c("P36S28", "P36S29", "P36S30"),
+                                      site62 = c("P36S31", "P36S32", "P36S33"),
+                                      
+                                      site63 = c("P36S37", "P36S38", "P36S39")
+     )
+     
+     
                           
      ## identify sites with 2 and 3 plants 
      landoltia_sites_with_two_or_more = as.vector(which(apply(apply(landoltia_same_location, 2, function(x) is.na(x)), 2, sum) != 2))
@@ -1210,7 +1371,108 @@
           xlim = c(0, max(landoltia_hamdist+0.02)))
      axis(side = 4, col.axis="blue")
     
-     sd
+     ## Lemna triplets
+     lemna_same_location = data.frame(site2 = c("P5S1", NA, NA),
+                                      site3 = c("P6S1", "P6S3",NA),
+                                      site4 = c("P7S1", "P7S2", "P7S3"),
+                                      site5 = c("P10S1", "P10S2", NA),
+                                      site6 = c("P10S2b", NA, NA),
+                                      site7 = c("P10S5", NA, NA),
+                                      site8 = c("P10S5b", "P10S6b", NA),
+                                      site9 = c("P10S7", "P10S8", "P10S9"),
+                                      site10 = c("P10S10", "P10S11", "P10S12"),
+                                      site11 = c("P10S13", "P10S14", NA),
+                                      site12 = c("P10S15b", NA, NA),
+                                      site13 = c("P10S19", "P10S20", "P10S21"),
+                                      site14 = c("P10S28", "P10S30",NA),
+                                      site15 = c("P11S7", "P11S8", "P11S9"),
+                                      site16 = c("P14S10", "P14S11", NA),
+                                      site17 = c("P14S15", NA, NA),
+                                      site18 = c("P14S19", "P14S20", "P14S21"),
+                                      site19 = c("P14S25", "P14S26", "P14S27"),
+                                      site20 = c("P14S31", "P14S32", NA),
+                                      site21 = c("P14S34", "P14S35", "P14S36"),
+                                      site22 = c("P14S43", "P14S44", "P14S45"),
+                                      site23 = c("P14S49", "P14S50", NA),
+                                      site24 = c("P14S55", "P14S56", "P14S57"),
+                                      site25 = c("P16S2", "P16S3", NA),
+                                      site26 = c("P17S1", "P17S2", "P17S3"),
+                                      site27 = c("P18S2", NA, NA),
+                                      site28 = c("P19S1", "P19S2", "P19S3"),
+                                      site29 = c("P19S7", "P19S8", "P19S9"),
+                                      site30 = c("P19S13", "P19A14", "P19S15"),
+                                      site31 = c("P19S19", "P19S20", "P19S21"),
+                                      site32 = c("P19S28", "P19S29", "P19S30"),
+                                      site33 = c("P19S31", "P19S32", "P19S33"),
+                                      site34 = c("P19S37", "P19S38", "P19S39"),
+                                      site35 = c("P19S46", "P19S47", "P19S48"),
+                                      site36 = c("P19S49", "P19S50", "P19S51"),
+                                      site37 = c("P21S1","P21S2", NA),
+                                      site38 = c("P22S4", "P22S6",NA),
+                                      site39 = c("P23S3", NA, NA),
+                                      site40 = c("P27S4", "P27S5", NA),
+                                      site41 = c("P27S10", "P27S11", "P27S12"),
+                                      site42 = c("P27S16", "P27S17", "P27S18"),
+                                      site43 = c("P27S19", "P27S20", "P27S21"),
+                                      site44 = c("P27S25", "P27S27", NA),
+                                      site45 = c("P27S39", "P27S40", "P27S41"),
+                                      site46 = c("P27S42", NA, NA),
+                                      site47 = c("P27S43", "P27S44", "P27S45"),
+                                      site48 = c("P27S46", "P27S47", "P27S48"),
+                                      site49 = c("P27S52", NA, NA),
+                                      site50 = c("P28S4", "P28S5", "P28S6"),
+                                      site51 = c("P30S1", "P30S2", "P30S3"),
+                                      site52 = c("P31S1", "P31S2", "P31S3"),
+                                      site53 = c("P32S4", "P32S5", "P32S6"),
+                                      site54 = c("P33S1", "P33S2", "P33S3"),
+                                      site55 = c("P34S5", "P34S6", NA),
+                                      site56 = c("P35S2", "P35S3", NA),
+                                      site57 = c("P36S4", "P36S5", "P36S6"),
+                                      site58 = c("P36S10", "P36S11", "P36S12"),
+                                      site59 = c("P36S13", "P36S14", "P36S15"),
+                                      site60 = c("P36S22", "P36S23", "P36S24"),
+                                      site61 = c("P36S28", "P36S29", "P36S30"),
+                                      site62 = c("P36S31", "P36S32", "P36S33"),
+                                      site63 = c("P36S37", "P36S38", "P36S39")
+     )
+            
+     ## identify sites with 2 and 3 plants 
+     lemna_sites_with_two_or_more = as.vector(which(apply(apply(lemna_same_location, 2, function(x) is.na(x)), 2, sum) != 2))
+     
+     ## remove singles
+     lemna_same_location = lemna_same_location[,c(lemna_sites_with_two_or_more)]
+     
+     lemna_saver = list()   
+     for (n in 1:ncol(lemna_same_location)) {
+       
+       runner_matrix = lemna_hamdist[which(colnames(lemna_hamdist) %in% lemna_same_location[,n]),which(colnames(lemna_hamdist) %in% lemna_same_location[,n]), drop=FALSE]
+       lemna_saver[[n]] = runner_matrix[lower.tri(runner_matrix, diag=FALSE)]
+       
+     }    
+     
+     ## compute histograms with equal bins
+     breaks = pretty(range(c(0,max(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]))), n = 30)
+     lemna_local_samples = hist(unlist(lemna_saver), breaks = breaks, plot = FALSE)
+     lemna_global_samples = hist(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)], breaks = breaks, plot = FALSE)
+     
+     # assemble triplet plot
+     plot(lemna_local_samples,
+          col = scales::alpha("red", 0.5),
+          xlab = "Genetic distance",
+          ylab = "", main="",
+          ylim = c(0, max(lemna_local_samples$counts)),
+          xlim = c(0, max(lemna_hamdist+0.02)))
+     axis(side=2, col.axis="red")
+     
+     ## add second histogram
+     par(new = TRUE)
+     plot(lemna_global_samples,
+          col = scales::alpha("blue", 0.5),
+          axes = FALSE, xlab = "", ylab = "", main = "",
+          ylim = c(0, max(lemna_global_samples$counts)),
+          xlim = c(0, max(lemna_hamdist+0.02)))
+     axis(side = 4, col.axis="blue")
+     
      
      ## landoltia population structure with LEA ####
      
@@ -1339,6 +1601,11 @@
      MRM(as.dist(landoltia_hamdist) ~ as.dist(landoltia_geodist), nperm = 999)
      
      mantel(landoltia_hamdist,landoltia_geodist)
+     
+     
+     
+     
+     
      
 ## scraps ####
      ## landoltia compute geographical distance heatmap ####
