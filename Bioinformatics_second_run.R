@@ -6,6 +6,7 @@
      library(LEA) ## for population structure analysis
      library(RColorBrewer) ## ready made color paletes
      library(vegan) ## for mantel()
+     library(data.table) ## for set()
      
      # install_version("SNPfiltR", "1.0.1")
      library(snpStats) ## for linkage disequilibrium
@@ -594,9 +595,117 @@
      
      
 ## DATA VISUALISATION / RESULTS ####
-     ## Numbers for M&M ####
+     ## micro sites ####
      
+     ## read micro sites data
      micro_sites = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/micro_sites.csv", sep=";")
+     
+     ## extract summary dataframe
+     micro_summary = data.frame("micro_site" = character(), "lemna" = integer(), "landoltia" = integer())
+     for (n in unique(micro_sites[,"micro_site_ID"])) {
+       micro_runner = micro_sites[which(micro_sites[,"micro_site_ID"] == n),, drop=FALSE]
+       filler_row = data.frame("micro_site" = n,
+                               "lemna" = sum(micro_runner[,"species"] == "lemna"), 
+                               "landoltia" = sum(micro_runner[,"species"] == "landoltia")) 
+       micro_summary = rbind(micro_summary, filler_row)
+     }
+     
+     ## total abundances
+     micro_summary[,"sum"] = apply(micro_summary[,2:3], 1, sum)
+     
+     # make categories for stacked barplot
+     micro_summary[,"group"] = ifelse(micro_summary[,"lemna"] > 0 & micro_summary[,"landoltia"] == 0, "lemna",
+                                      ifelse(micro_summary[,"landoltia"] > 0 & micro_summary[,"lemna"] == 0, "landoltia",
+                                             ifelse(micro_summary[,"lemna"] > 0 & micro_summary[,"landoltia"] > 0, "both", NA)))
+     
+     ## stacked barplot
+     
+         ## get abundances per species
+         lemna_counts = table(factor(micro_summary[,"sum"][micro_summary[,"group"] == "lemna"], levels = 1:6))
+         landoltia_counts = table(factor(micro_summary[,"sum"][micro_summary[,"group"] == "landoltia"], levels = 1:6))
+         both_counts = table(factor(micro_summary[,"sum"][micro_summary[,"group"] == "both"], levels = 1:6))
+         
+         ## assembly plotter dataframe
+         stacked_barplotter = rbind(lemna_counts, landoltia_counts, both_counts)
+         
+         # assembly plot and legend
+         barplot(stacked_barplotter, 
+                 col=c("darkgreen", "purple", "gray50"), 
+                 space=0.1, ylab="Frequency", xlab="Plants per micro site", ylim=c(0,(max(colSums(stacked_barplotter))+1)))
+         box()
+         legend("topleft", inset=0.01, legend=c("lemna", "landoltia", "both"),
+                fill=c("darkgreen", "purple", "gray50"))
+         
+     ## calculate within micro site diversity
+     
+         ## calculate average within site distances
+         micro_distance = data.frame("micro_site" = character(), 
+                                     "lemna_avg_distance" = integer(), "lemna_sd_distance" = integer(),
+                                     "landoltia_avg_distanc" = integer(), "landoltia_sd_distance" = integer())
+         for (n in unique(micro_sites[,"micro_site_ID"])) {
+           
+           micro_runner = micro_sites[which(micro_sites[,"micro_site_ID"] == n),, drop=FALSE]
+           
+           ## extract subset from lemna_hamdist from micro site
+           runner_lemna_dist = lemna_hamdist[which(colnames(lemna_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "lemna"),][,"samples"]),which(colnames(lemna_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "lemna"),][,"samples"])]
+           
+           ## extract subset from landoltia_hamdist from micro site
+           runner_landoltia_dist = landoltia_hamdist[which(colnames(landoltia_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "landoltia"),][,"samples"]),which(colnames(landoltia_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "landoltia"),][,"samples"])]
+           
+           ## compute mean
+           filler_row = data.frame("micro_site" = n,
+                                   "lemna_avg_distance" = mean(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]),
+                                   "lemna_sd_distance" = sd(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]),
+                                   "landoltia_avg_distance" = mean(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)]),
+                                   "landoltia_sd_distance" = sd(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)])) 
+           micro_distance = rbind(micro_distance, filler_row)
+         }
+         
+         ## merge to micro_summary
+         micro_merged_summary = merge(micro_summary, micro_distance, by="micro_site")
+         
+         ## subset for both
+         micro_scatter_plotter = micro_merged_summary[which(micro_merged_summary[,"group"] == "both"),]
+         micro_scatter_plotter[6:9] = (micro_scatter_plotter[6:9])^(1/3)
+         
+         ## base plot
+         plot(NULL, xlab="within micro site genetic distance*(1/3) (Lemna)", ylab="within micro site genetic distance*(1/3) (Landoltia)",
+              xlim=c(0,1.2), ylim=c(0,1))
+         
+         ## x axis error bars
+         suppressWarnings(
+         arrows(micro_scatter_plotter[,"lemna_avg_distance"] - micro_scatter_plotter[,"lemna_sd_distance"], 
+                micro_scatter_plotter[,"landoltia_avg_distance"], 
+                micro_scatter_plotter[,"lemna_avg_distance"] + micro_scatter_plotter[,"lemna_sd_distance"], 
+                micro_scatter_plotter[,"landoltia_avg_distance"],
+                angle = 90, code = 3, length = 0.05, col="gray70"))
+         
+         ## y axis error bars
+         suppressWarnings(
+         arrows(micro_scatter_plotter[,"lemna_avg_distance"], 
+                micro_scatter_plotter[,"landoltia_avg_distance"] - micro_scatter_plotter[,"landoltia_sd_distance"], 
+                micro_scatter_plotter[,"lemna_avg_distance"], 
+                micro_scatter_plotter[,"landoltia_avg_distance"] + micro_scatter_plotter[,"landoltia_sd_distance"], 
+                angle = 90, code = 3, length = 0.1, col="gray70"))
+         ## points
+         ## colour gradient for plotting
+         blues = brewer.pal(4,"Blues")
+         points(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"],
+                col="black", cex=1.2,
+                pch=ifelse(micro_scatter_plotter[,"sum"] == 3, 15,
+                           ifelse(micro_scatter_plotter[,"sum"] == 4, 16,
+                                  ifelse(micro_scatter_plotter[,"sum"] == 5, 17, 18))))
+                                                       
+         ## acessories
+         abline(a = 0, b = 1, lty=2, lwd=2, col="gray50")
+         legend("bottomright", inset=0.01, legend=c("n=3","n=4", "n=5", "n=6"),
+                pch=c(15, 16, 17, 18))
+         
+     
+     
+     
+     
+     
      
      length(unique(micro_sites[,"micro_site_ID"]))
      
@@ -612,15 +721,14 @@
      length(which((substr(colnames(lemna_hamdist),1,3)) == "P27"))
      length(which((substr(colnames(lemna_hamdist),1,3)) == "P36"))
      
-     
-     
-     
-     
      length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P10"),][,"micro_site_ID"]))
      length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P14"),][,"micro_site_ID"]))
      length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P19"),][,"micro_site_ID"]))
      length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P27"),][,"micro_site_ID"]))
      length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P36"),][,"micro_site_ID"]))
+     
+     
+     ## Numbers for M&M ####
      
      ## waterbody df
      shared_waterbodies = data.frame(P1 = "landoltia",
