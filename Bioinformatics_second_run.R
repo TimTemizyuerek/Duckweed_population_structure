@@ -7,6 +7,7 @@
      library(RColorBrewer) ## ready made color paletes
      library(vegan) ## for mantel()
      library(data.table) ## for set()
+     library(plotrix) ## for floating.pie()
      
      # install_version("SNPfiltR", "1.0.1")
      library(snpStats) ## for linkage disequilibrium
@@ -595,7 +596,55 @@
      
      
 ## DATA VISUALISATION / RESULTS ####
-     ## micro sites ####
+     ## micro site map ####
+     
+     ## read and transform coordinates
+     all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
+     all_coordinates$latitude = sapply(all_coordinates[,"GPS_S"], convert_dmm_to_dd)
+     all_coordinates$longitude = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
+     
+     ## plot all micro_sites as piecharts
+     
+     ## extract data to plot micro sites
+     micro_map = data.frame(matrix(0, ncol=6,nrow = 0))
+     m=0; for (n in unique(micro_sites[,"micro_site_ID"])){
+       
+       m=m+1
+       
+       ## extract average coordinates
+       runner_micro_site = micro_sites[which(micro_sites[,"micro_site_ID"] == n),]
+       runner_coor = all_coordinates[which(all_coordinates[,"ID"] %in% runner_micro_site[,"samples"]),]
+       runner_micro_site2 = micro_summary[which(micro_summary[,"micro_site"] == n),]
+       
+       micro_map[m,1] = runner_micro_site2[,"micro_site"]
+       micro_map[m,2] = runner_coor[1,"latitude"]
+       micro_map[m,3] = runner_coor[1,"longitude"]
+       micro_map[m,4] = runner_micro_site2[,"lemna"]
+       micro_map[m,5] = runner_micro_site2[,"landoltia"]
+       micro_map[m,6] = runner_micro_site2[,"sum"]
+       micro_map = rbind(micro_map, filler_vec)
+     }
+     colnames(micro_map) = c("micro","long", "lat", "lemna", "landoltia", "total")    
+     micro_map[,"long"] = as.numeric(micro_map[,"long"]);micro_map[,"lat"] = as.numeric(micro_map[,"lat"])
+     micro_map[,"lemna"] = as.numeric(micro_map[,"lemna"]);micro_map[,"landoltia"] = as.numeric(micro_map[,"landoltia"])
+     micro_map[,"total"] = as.numeric(micro_map[,"total"])
+     
+     ## assemble plot
+     plot(NULL, 
+          ylim=c(min(all_coordinates[,"latitude"]), max(all_coordinates[,"latitude"])),
+          xlim=c(min(all_coordinates[,"longitude"]), max(all_coordinates[,"longitude"])),
+          ylab="Latitude", xlab="Longitude")  
+     
+     ## add piecharts
+     for (n in 1:nrow(micro_map)) {
+       floating.pie(xpos=micro_map[,"lat"][n], ypos=micro_map[,"long"][n], 
+                    x=c(micro_map[,4][n], micro_map[,5][n]), radius=micro_map[,"total"][n]/150,
+                    col=c("purple", "darkgreen"))
+       }
+     
+     
+     
+     ## Competitive environment ####
      
      ## read micro sites data
      micro_sites = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/micro_sites.csv", sep=";")
@@ -636,7 +685,7 @@
          legend("topleft", inset=0.01, legend=c("lemna", "landoltia", "both"),
                 fill=c("darkgreen", "purple", "gray50"))
          
-     ## calculate within micro site diversity
+     ## two species within micro site diversity
      
          ## calculate average within site distances
          micro_distance = data.frame("micro_site" = character(), 
@@ -668,7 +717,14 @@
          micro_scatter_plotter = micro_merged_summary[which(micro_merged_summary[,"group"] == "both"),]
          micro_scatter_plotter[6:9] = (micro_scatter_plotter[6:9])^(1/3)
          
-         ## base plot
+         ## set screens
+         split.screen(rbind(c(0, 0.8, 0, 0.8),  ## scatterplot 
+                            c(0.82, 1, 0, 0.8),  ## y-axis (landoltia)
+                            c(0, 0.8, 0.82, 1))) ## x-axis (lemna)
+         
+         ## scatterplot
+         screen(1)
+         par(mar=c(4,4,0,0))
          plot(NULL, xlab="within micro site genetic distance*(1/3) (Lemna)", ylab="within micro site genetic distance*(1/3) (Landoltia)",
               xlim=c(0,1.2), ylim=c(0,1))
          
@@ -688,8 +744,6 @@
                 micro_scatter_plotter[,"landoltia_avg_distance"] + micro_scatter_plotter[,"landoltia_sd_distance"], 
                 angle = 90, code = 3, length = 0.1, col="gray70"))
          ## points
-         ## colour gradient for plotting
-         blues = brewer.pal(4,"Blues")
          points(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"],
                 col="black", cex=1.2,
                 pch=ifelse(micro_scatter_plotter[,"sum"] == 3, 15,
@@ -700,12 +754,49 @@
          abline(a = 0, b = 1, lty=2, lwd=2, col="gray50")
          legend("bottomright", inset=0.01, legend=c("n=3","n=4", "n=5", "n=6"),
                 pch=c(15, 16, 17, 18))
+         close.screen(1)
+     
+         ## add landoltia histogram
+         screen(2)
+         landoltia_breaks = pretty(range(c(0,max(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]^(1/3)))), n = 15)
+         landoltia_micro_hist = hist(micro_merged_summary[,"landoltia_avg_distance"]^(1/3), breaks=landoltia_breaks, plot=FALSE)
+         landoltia_global_hist = hist(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]^(1/3), breaks=landoltia_breaks, plot=FALSE)
+         ## assemble plot
+         par(mar=c(4,0,0,0.5))
+         plot(0, 0, type = "n", xlim = c(0, max(landoltia_micro_hist$density, landoltia_global_hist$density)), ylim = c(0,1), axes = FALSE, xlab = "Density", ylab = "")
+         ## plot global
+         for (n in seq_along(landoltia_global_hist$density)) {rect(0, landoltia_global_hist$breaks[n], landoltia_global_hist$density[n], landoltia_global_hist$breaks[n+1], col = scales::alpha("black",0.5), border = "black")}
+         ## plot micro
+         for (n in seq_along(landoltia_micro_hist$density)) {rect(0, landoltia_micro_hist$breaks[n], landoltia_micro_hist$density[n], landoltia_micro_hist$breaks[n+1], col = scales::alpha("purple",0.75), border = "black")}
+         axis(1); box()
+         legend("topleft", inset=0.02, col=c("purple", scales::alpha("black",0.5)),legend=c("micro", "global"), pch=15)
+         close.screen(2)
          
-     
-     
-     
-     
-     
+         ## add lemna histogram
+         screen(3)
+         lemna_breaks = pretty(range(c(0,max(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]^(1/3)))), n = 15)
+         lemna_micro_hist = hist(micro_merged_summary[,"lemna_avg_distance"]^(1/3), breaks=lemna_breaks, plot=FALSE)
+         lemna_global_hist = hist(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]^(1/3), breaks=lemna_breaks, plot=FALSE)
+         ## assemble plot
+         par(mar=c(0,4,0.5,0))
+         plot(0, 0, type = "n", ylim = c(0, max(lemna_micro_hist$density, lemna_global_hist$density)), xlim = c(0,1.2), axes = FALSE, xlab = "", ylab = "Density")
+         ## plot global
+         for (n in seq_along(lemna_global_hist$density)) {rect(lemna_global_hist$breaks[n],0, lemna_global_hist$breaks[n+1], lemna_global_hist$density[n], ,col = scales::alpha("black",0.5), border = "black")}
+         ## plot micro
+         for (n in seq_along(lemna_micro_hist$density)) {rect(lemna_micro_hist$breaks[n],0, lemna_micro_hist$breaks[n+1], lemna_micro_hist$density[n], ,col = scales::alpha("darkgreen",0.75), border = "black")}
+         axis(2); box()
+         legend("topright", inset=0.02, col=c("darkgreen", scales::alpha("black",0.5)),legend=c("micro", "global"), pch=15)
+         close.screen(3)
+         close.screen(all.screens = TRUE)
+         
+         
+         
+         
+     ## other stuff
+         
+     length(which(micro_summary[,"group"] == "both"))
+     length(which(micro_summary[,"group"] == "lemna"))
+     length(which(micro_summary[,"group"] == "landoltia"))
      
      length(unique(micro_sites[,"micro_site_ID"]))
      
