@@ -596,7 +596,7 @@
      
      
 ## DATA VISUALISATION / RESULTS ####
-     ## micro site map ####
+     ## maps ####
      
      ## read and transform coordinates
      all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
@@ -605,45 +605,102 @@
      
      ## plot all micro_sites as piecharts
      
-     ## extract data to plot micro sites
-     micro_map = data.frame(matrix(0, ncol=6,nrow = 0))
-     m=0; for (n in unique(micro_sites[,"micro_site_ID"])){
-       
-       m=m+1
-       
-       ## extract average coordinates
-       runner_micro_site = micro_sites[which(micro_sites[,"micro_site_ID"] == n),]
-       runner_coor = all_coordinates[which(all_coordinates[,"ID"] %in% runner_micro_site[,"samples"]),]
-       runner_micro_site2 = micro_summary[which(micro_summary[,"micro_site"] == n),]
-       
-       micro_map[m,1] = runner_micro_site2[,"micro_site"]
-       micro_map[m,2] = runner_coor[1,"latitude"]
-       micro_map[m,3] = runner_coor[1,"longitude"]
-       micro_map[m,4] = runner_micro_site2[,"lemna"]
-       micro_map[m,5] = runner_micro_site2[,"landoltia"]
-       micro_map[m,6] = runner_micro_site2[,"sum"]
-       micro_map = rbind(micro_map, filler_vec)
-     }
-     colnames(micro_map) = c("micro","long", "lat", "lemna", "landoltia", "total")    
-     micro_map[,"long"] = as.numeric(micro_map[,"long"]);micro_map[,"lat"] = as.numeric(micro_map[,"lat"])
-     micro_map[,"lemna"] = as.numeric(micro_map[,"lemna"]);micro_map[,"landoltia"] = as.numeric(micro_map[,"landoltia"])
-     micro_map[,"total"] = as.numeric(micro_map[,"total"])
+         ## extract data to plot micro sites
+         micro_map = data.frame(matrix(0, ncol=6,nrow = 0))
+         m=0; for (n in unique(micro_sites[,"micro_site_ID"])){
+           
+           m=m+1
+           
+           ## extract average coordinates
+           runner_micro_site = micro_sites[which(micro_sites[,"micro_site_ID"] == n),]
+           runner_coor = all_coordinates[which(all_coordinates[,"ID"] %in% runner_micro_site[,"samples"]),]
+           runner_micro_site2 = micro_summary[which(micro_summary[,"micro_site"] == n),]
+           
+           micro_map[m,1] = runner_micro_site2[,"micro_site"]
+           micro_map[m,2] = runner_coor[1,"latitude"]
+           micro_map[m,3] = runner_coor[1,"longitude"]
+           micro_map[m,4] = runner_micro_site2[,"lemna"]
+           micro_map[m,5] = runner_micro_site2[,"landoltia"]
+           micro_map[m,6] = runner_micro_site2[,"sum"]
+           }
+         colnames(micro_map) = c("micro","long", "lat", "lemna", "landoltia", "total")    
+         micro_map[,"long"] = as.numeric(micro_map[,"long"]);micro_map[,"lat"] = as.numeric(micro_map[,"lat"])
+         micro_map[,"lemna"] = as.numeric(micro_map[,"lemna"]);micro_map[,"landoltia"] = as.numeric(micro_map[,"landoltia"])
+         micro_map[,"total"] = as.numeric(micro_map[,"total"])
+         
+         ## assemble plot
+         plot(NULL, 
+              ylim=c(min(all_coordinates[,"latitude"]), max(all_coordinates[,"latitude"])),
+              xlim=c(min(all_coordinates[,"longitude"]), max(all_coordinates[,"longitude"])),
+              ylab="Latitude", xlab="Longitude")  
+         
+         ## add piecharts
+         for (n in 1:nrow(micro_map)) {
+           floating.pie(xpos=micro_map[,"lat"][n], ypos=micro_map[,"long"][n], 
+                        x=c(micro_map[,4][n], micro_map[,5][n]), radius=micro_map[,"total"][n]/150,
+                        col=c("purple", "darkgreen"))
+           }
+         
+     ## plot all waterbodies as size scaled piecharts
      
-     ## assemble plot
-     plot(NULL, 
-          ylim=c(min(all_coordinates[,"latitude"]), max(all_coordinates[,"latitude"])),
-          xlim=c(min(all_coordinates[,"longitude"]), max(all_coordinates[,"longitude"])),
-          ylab="Latitude", xlab="Longitude")  
-     
-     ## add piecharts
-     for (n in 1:nrow(micro_map)) {
-       floating.pie(xpos=micro_map[,"lat"][n], ypos=micro_map[,"long"][n], 
-                    x=c(micro_map[,4][n], micro_map[,5][n]), radius=micro_map[,"total"][n]/150,
-                    col=c("purple", "darkgreen"))
-       }
-     
-     
-     
+         ## extract waterbody data
+         waterbody_map = data.frame(matrix(0, ncol=6,nrow = 0))
+         
+         m=0; for (n in unique(substr(micro_sites[,"micro_site_ID"],1,3))){
+           
+           m=m+1
+           
+           ## extract average coordinates
+           runner_waterbody_site = micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == n),]
+           runner_coor = all_coordinates[which(all_coordinates[,"ID"] %in% runner_waterbody_site[,"samples"]),]
+           
+           waterbody_map[m,1] = n
+           waterbody_map[m,2] = mean(runner_coor[,"latitude"])
+           waterbody_map[m,3] = mean(runner_coor[,"longitude"])
+           waterbody_map[m,4] = length(which(substr(runner_coor[,"species"],1,2) == "Le"))
+           waterbody_map[m,5] = length(which(substr(runner_coor[,"species"],1,2) == "La"))
+           waterbody_map[m,6] = waterbody_map[m,4] + waterbody_map[m,5]
+           
+         }
+         colnames(waterbody_map) = c("micro","long", "lat", "lemna", "landoltia", "total")    
+         waterbody_map[,"long"] = as.numeric(waterbody_map[,"long"]);waterbody_map[,"lat"] = as.numeric(waterbody_map[,"lat"])
+         waterbody_map[,"lemna"] = as.numeric(waterbody_map[,"lemna"]);waterbody_map[,"landoltia"] = as.numeric(waterbody_map[,"landoltia"])
+         waterbody_map[,"total"] = as.numeric(waterbody_map[,"total"])
+         
+         ## transform total for scaling in plot
+         waterbody_map$scaled_total = 0.01 + (0.04*(waterbody_map[,"total"]-1))/51
+         
+         ## load shapefile
+         queensland_map = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Wetland_areas.shp")
+         brisbane_map = st_crop(queensland_map, c(xmin = 151.9, ymin = -27, xmax = 153.5, ymax = -28)); rm(queensland_map)
+         
+         ## assemble plot
+         plot(st_geometry(brisbane_map), col="dodgerblue", border="dodgerblue", lwd=0.25)
+         axis(side=1, at=c("152", "152.5", "153", "153.5"), labels=c("152°E", "152.5°E", "153°E", "153.5°E"))
+         axis(side=2, at=c("-28", "-27.8", "-27.6", "-27.4", "-27.2", "-27"), labels=c("-28°S", "-27.8°S", "-27.6°S", "-27.4°S", "-27.2°S", "-27°S"),las=2)
+         rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col=scales::alpha("white", 0.25), border="black", lwd=1)
+         
+         # plot(NULL, 
+         #      ylim=c(min(all_coordinates[,"latitude"]), max(all_coordinates[,"latitude"])),
+         #      xlim=c(min(all_coordinates[,"longitude"]), max(all_coordinates[,"longitude"])),
+         #      ylab="Latitude", xlab="Longitude")  
+         # 
+         ## add piecharts
+         for (n in 1:nrow(waterbody_map)) {
+           floating.pie(xpos=waterbody_map[,"lat"][n], ypos=-waterbody_map[,"long"][n], 
+                        x=c(waterbody_map[,4][n], waterbody_map[,5][n]), radius=waterbody_map[,"scaled_total"][n],
+                        col=c("purple", "darkgreen"))
+         }
+         
+         ## x axis scale
+         lines(x=c(152.1, 152.3), y=c(27.2, 27.2))
+         text(152.2, 27.21, labels="~20km")
+         
+         ## y axis scale
+         lines(x=c(152.1, 152.1), y=c(27.2, 27.3))
+         text(152.16, 27.25, labels="~11km")
+         
+         
      ## Competitive environment ####
      
      ## read micro sites data
@@ -788,9 +845,6 @@
          legend("topright", inset=0.02, col=c("darkgreen", scales::alpha("black",0.5)),legend=c("micro", "global"), pch=15)
          close.screen(3)
          close.screen(all.screens = TRUE)
-         
-         
-         
          
      ## other stuff
          
@@ -999,7 +1053,7 @@
      ## read and transform coordinates
      all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
      all_coordinates$latitude = sapply(all_coordinates[,"GPS_S"], convert_dmm_to_dd)
-     all_coordinates$longitute = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
+     all_coordinates$longitude = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
      
      ## assemble plot
      
@@ -1011,7 +1065,7 @@
        landoltia_coor = all_coordinates[which(colnames(landoltia_hamdist) %in% all_coordinates[,"ID"]),]
        
        ## calculate geographic distance
-       landoltia_geodist = round(distm(landoltia_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
+       landoltia_geodist = round(distm(landoltia_coor[, c("longitude", "latitude")], fun = distVincentyEllipsoid),2)
        rownames(landoltia_geodist) = landoltia_coor[,"ID"]; colnames(landoltia_geodist) = landoltia_coor[,"ID"]
        
        ## reduce matrix to triangle
@@ -1026,6 +1080,7 @@
             pch=21, bg="purple", cex=0.8, ylim=c(-0.01,max(c(lemna_hamdist,landoltia_hamdist))),
             xlab="Geographic distance log(m)", 
             ylab="Genetic distance")
+       abline(lm(landoltia_hamdist_vector ~ log(landoltia_geodist_vector)), lwd=5, col="red")
        abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
        abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
        abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
@@ -1038,7 +1093,7 @@
        lemna_coor = all_coordinates[which(colnames(lemna_hamdist) %in% all_coordinates[,"ID"]),]
        
        ## calculate geographic distance
-       lemna_geodist = round(distm(lemna_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
+       lemna_geodist = round(distm(lemna_coor[, c("longitude", "latitude")], fun = distVincentyEllipsoid),2)
        rownames(lemna_geodist) = lemna_coor[,"ID"]; colnames(lemna_geodist) = lemna_coor[,"ID"]
        
        ## reduce matrix to triangle
@@ -1053,13 +1108,13 @@
             pch=21, bg="darkgreen", cex=0.8, ylim=c(-0.01,max(c(lemna_hamdist, landoltia_hamdist))),
             xlab="Geographic distance log(m)", 
             ylab="Genetic distance")
+       abline(lm(lemna_hamdist_vector ~ log(lemna_geodist_vector)), lwd=5, col="red")
        abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
        abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
        abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
        abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
        abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
 
-     
      ## Mantel tests
      
      ## LANDOLTIA
@@ -1068,7 +1123,6 @@
      ## LEMNA
      vegan::mantel(lemna_hamdist, lemna_geodist, permutations = 1000)
      
-       
      ## FIGURE 3: Within vs outside distance/diversity/clone number ####
      
      ## number of iterations
@@ -1833,11 +1887,11 @@
           return(as.numeric(parts[1]) + as.numeric(parts[2]) / 60)
      }
      lemna_coordinates$latitude = sapply(lemna_coordinates[,"GPS_S"], convert_dmm_to_dd)
-     lemna_coordinates$longitute = sapply(lemna_coordinates[,"GPS_E"], convert_dmm_to_dd)
+     lemna_coordinates$longitude = sapply(lemna_coordinates[,"GPS_E"], convert_dmm_to_dd)
      rownames(lemna_coordinates) = lemna_coordinates[,"ID"]
      
      ## calculate geographic distance
-     lemna_geodist_matrix = distm(lemna_coordinates[, c("longitute", "latitude")], fun = distHaversine)
+     lemna_geodist_matrix = distm(lemna_coordinates[, c("longitude", "latitude")], fun = distHaversine)
      rownames(lemna_geodist_matrix) = lemna_coordinates[,"ID"]; colnames(lemna_geodist_matrix) = lemna_coordinates[,"ID"]
      
      #add ordered names
@@ -2772,7 +2826,7 @@
      ## read and transform coordinates
      all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
      all_coordinates$latitude = sapply(all_coordinates[,"GPS_S"], convert_dmm_to_dd)
-     all_coordinates$longitute = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
+     all_coordinates$longitude = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
      
      ## assemble plot
      
@@ -2784,7 +2838,7 @@
      lemna_coor = all_coordinates[which(colnames(lemna_hamdist) %in% all_coordinates[,"ID"]),]
      
      ## calculate geographic distance
-     lemna_geodist = round(distm(lemna_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
+     lemna_geodist = round(distm(lemna_coor[, c("longitude", "latitude")], fun = distVincentyEllipsoid),2)
      rownames(lemna_geodist) = lemna_coor[,"ID"]; colnames(lemna_geodist) = lemna_coor[,"ID"]
      
      ## transform to vector
@@ -2813,7 +2867,7 @@
      lemna_noclone_coor = all_coordinates[which(colnames(lemna_noclone_hamdist) %in% all_coordinates[,"ID"]),]
      
      ## calculate geographic distance
-     lemna_noclone_geodist = round(distm(lemna_noclone_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
+     lemna_noclone_geodist = round(distm(lemna_noclone_coor[, c("longitude", "latitude")], fun = distVincentyEllipsoid),2)
      rownames(lemna_noclone_geodist) = lemna_noclone_coor[,"ID"]; colnames(lemna_noclone_geodist) = lemna_noclone_coor[,"ID"]
      
      ## transform to vector
@@ -2843,7 +2897,7 @@
      landoltia_noclone_coor = all_coordinates[which(colnames(landoltia_noclone_hamdist) %in% all_coordinates[,"ID"]),]
      
      ## calculate geographic distance
-     landoltia_noclone_geodist = round(distm(landoltia_noclone_coor[, c("longitute", "latitude")], fun = distVincentyEllipsoid),2)
+     landoltia_noclone_geodist = round(distm(landoltia_noclone_coor[, c("longitude", "latitude")], fun = distVincentyEllipsoid),2)
      rownames(landoltia_noclone_geodist) = landoltia_noclone_coor[,"ID"]; colnames(landoltia_noclone_geodist) = landoltia_noclone_coor[,"ID"]
      
      ## transform to vector
