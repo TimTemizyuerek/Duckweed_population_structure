@@ -8,6 +8,7 @@
      library(vegan) ## for mantel()
      library(data.table) ## for set()
      library(plotrix) ## for floating.pie()
+     library(sf) ## for reading shapefiles read_sf()
      
      # install_version("SNPfiltR", "1.0.1")
      library(snpStats) ## for linkage disequilibrium
@@ -359,7 +360,7 @@
      ## save in dataframe
      landoltia_clone_df = as.data.frame(matrix(NA, ncol=length(landoltia_clone_list), nrow=max(lengths)))
      landoltia_clone_names = vector()
-     for (n in 1:length(landoltia_clone_list)) {landoltia_clone_names[n] = paste0("clone",n, sep="")}
+     for (n in 1:length(landoltia_clone_list)) {landoltia_clone_names[n] = paste0("la_clone",n, sep="")}
      names(landoltia_clone_df) = landoltia_clone_names
      for (n in 1:length(landoltia_clone_list)) {
           
@@ -539,7 +540,7 @@
      ## save in dataframe
      lemna_clone_df = as.data.frame(matrix(NA, ncol=length(lemna_clone_list), nrow=max(lengths)))
      lemna_clone_names = vector()
-     for (n in 1:length(lemna_clone_list)) {lemna_clone_names[n] = paste0("clone",n, sep="")}
+     for (n in 1:length(lemna_clone_list)) {lemna_clone_names[n] = paste0("le_clone",n, sep="")}
      names(lemna_clone_df) = lemna_clone_names
      for (n in 1:length(lemna_clone_list)) {
        
@@ -603,49 +604,92 @@
      all_coordinates$latitude = sapply(all_coordinates[,"GPS_S"], convert_dmm_to_dd)
      all_coordinates$longitude = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
      
-     ## plot all micro_sites as piecharts
+     ## read micro sites data
+     micro_sites = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/micro_sites.csv", sep=";")
      
-         ## extract data to plot micro sites
-         micro_map = data.frame(matrix(0, ncol=6,nrow = 0))
-         m=0; for (n in unique(micro_sites[,"micro_site_ID"])){
-           
-           m=m+1
-           
-           ## extract average coordinates
-           runner_micro_site = micro_sites[which(micro_sites[,"micro_site_ID"] == n),]
-           runner_coor = all_coordinates[which(all_coordinates[,"ID"] %in% runner_micro_site[,"samples"]),]
-           runner_micro_site2 = micro_summary[which(micro_summary[,"micro_site"] == n),]
-           
-           micro_map[m,1] = runner_micro_site2[,"micro_site"]
-           micro_map[m,2] = runner_coor[1,"latitude"]
-           micro_map[m,3] = runner_coor[1,"longitude"]
-           micro_map[m,4] = runner_micro_site2[,"lemna"]
-           micro_map[m,5] = runner_micro_site2[,"landoltia"]
-           micro_map[m,6] = runner_micro_site2[,"sum"]
-           }
-         colnames(micro_map) = c("micro","long", "lat", "lemna", "landoltia", "total")    
-         micro_map[,"long"] = as.numeric(micro_map[,"long"]);micro_map[,"lat"] = as.numeric(micro_map[,"lat"])
-         micro_map[,"lemna"] = as.numeric(micro_map[,"lemna"]);micro_map[,"landoltia"] = as.numeric(micro_map[,"landoltia"])
-         micro_map[,"total"] = as.numeric(micro_map[,"total"])
+     ## extract summary dataframe
+     micro_summary = data.frame("micro_site" = character(), "lemna" = integer(), "landoltia" = integer())
+     for (n in unique(micro_sites[,"micro_site_ID"])) {
+       micro_runner = micro_sites[which(micro_sites[,"micro_site_ID"] == n),, drop=FALSE]
+       filler_row = data.frame("micro_site" = n,
+                               "lemna" = sum(micro_runner[,"species"] == "lemna"), 
+                               "landoltia" = sum(micro_runner[,"species"] == "landoltia")) 
+       micro_summary = rbind(micro_summary, filler_row)
+     }
+     micro_summary[,"sum"] = apply(micro_summary[,2:3], 1, sum)
+     
+     ## combine clone datasets
+     landoltia_clone_df[19:27,] = matrix(NA, ncol=27, nrow=9)
+     total_clone_df = cbind(lemna_clone_df,landoltia_clone_df)
+     
+     ## add clone col to micro_sites 
+     clone_vec = rep(NA, nrow(micro_sites))
+     for (n in colnames(total_clone_df)) {
+       
+       runner_col = total_clone_df[,n]
+       clone_vec[which(micro_sites[,"samples"] %in% runner_col)] = n
+       
+       
+     }
+     micro_sites[,"clone"] = clone_vec
+     
+     ## add coordinates to each sample
+     coor_df = data.frame(matrix(ncol=3, nrow=0))
+     for (n in unique(micro_sites[,"samples"])) {
+       
+       coor_df = rbind(coor_df, all_coordinates[which(all_coordinates[,"ID"] == n),c("ID","latitude", "longitude")])
+       
+     }
+     names(coor_df)[1] = "samples"
+     micro_sites = merge(micro_sites, coor_df, by="samples")
+     
+     
+     ## create underlying map plot
+     
+         ## load shapefiles
+         sf_use_s2(FALSE)
+         brisbane_waterbodies = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Brisbane wetland areas/Wetland_areas.shp")
+         brisbane_waterbodies = st_make_valid(brisbane_waterbodies)
+         brisbane_waterbodies = st_crop(brisbane_waterbodies, c(xmin = min(all_coordinates[,"longitude"])-0.01,
+                                                                xmax = max(all_coordinates[,"longitude"])+0.05,
+                                                                ymin = -max(all_coordinates[,"latitude"])-0.05,
+                                                                ymax = -min(all_coordinates[,"latitude"])+0.05))
+                                                
+         brisbane_coastline = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Brisbane coastline/Coastline.shp")
+         brisbane_coastline = st_crop(brisbane_coastline, c(xmin = min(all_coordinates[,"longitude"])-0.01,
+                                                            xmax = max(all_coordinates[,"longitude"])+0.05,
+                                                            ymin = -max(all_coordinates[,"latitude"])-0.05,
+                                                            ymax = -min(all_coordinates[,"latitude"])+0.05))
+         
+         ## align shapefiles
+         brisbane_waterbodies = st_transform(brisbane_waterbodies, st_crs(brisbane_coastline))
+         
+         ## buffer around coast
+         sf_use_s2(TRUE)
+         coast_buffer = st_buffer(brisbane_coastline, dist = 5)
+         
+         ## separate land and sea
+         is_saltwater = lengths(st_intersects(brisbane_waterbodies, coast_buffer)) > 0
+         brisbane_saltwater = brisbane_waterbodies[is_saltwater, ]
+         brisbane_freshwater = brisbane_waterbodies[!is_saltwater, ]
          
          ## assemble plot
-         plot(NULL, 
-              ylim=c(min(all_coordinates[,"latitude"]), max(all_coordinates[,"latitude"])),
-              xlim=c(min(all_coordinates[,"longitude"]), max(all_coordinates[,"longitude"])),
-              ylab="Latitude", xlab="Longitude")  
-         
-         ## add piecharts
-         for (n in 1:nrow(micro_map)) {
-           floating.pie(xpos=micro_map[,"lat"][n], ypos=micro_map[,"long"][n], 
-                        x=c(micro_map[,4][n], micro_map[,5][n]), radius=micro_map[,"total"][n]/150,
-                        col=c("purple", "darkgreen"))
-           }
-         
-     ## plot all waterbodies as size scaled piecharts
+         par(mar=c(0,0,0,0))
+         plot(st_geometry(brisbane_freshwater), col = "dodgerblue", border = NA)
+         plot(st_geometry(brisbane_saltwater), col = "white", border = NA, add = TRUE)
+         plot(st_geometry(brisbane_coastline), col = "black", lwd = 1, add = TRUE)
+         rect(min(all_coordinates[,"longitude"])-0.01,
+              -max(all_coordinates[,"latitude"])-0.05,
+              max(all_coordinates[,"longitude"])+0.05,
+              -min(all_coordinates[,"latitude"])+0.05,
+              col=scales::alpha("white", 0.25), border="black", lwd=1)
+         # axis(side=1, at=c("152", "152.5", "153", "153.5"), labels=c("152°E", "152.5°E", "153°E", "153.5°E"))
+         # axis(side=2, at=c("-28", "-27.8", "-27.6", "-27.4", "-27.2", "-27"), labels=c("-28°S", "-27.8°S", "-27.6°S", "-27.4°S", "-27.2°S", "-27°S"),las=2)
+          
+     ## waterbody piecharts
      
          ## extract waterbody data
          waterbody_map = data.frame(matrix(0, ncol=6,nrow = 0))
-         
          m=0; for (n in unique(substr(micro_sites[,"micro_site_ID"],1,3))){
            
            m=m+1
@@ -669,55 +713,70 @@
          
          ## transform total for scaling in plot
          waterbody_map$scaled_total = 0.01 + (0.04*(waterbody_map[,"total"]-1))/51
-         
-         ## load shapefile
-         queensland_map = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Wetland_areas.shp")
-         brisbane_map = st_crop(queensland_map, c(xmin = 151.9, ymin = -27, xmax = 153.5, ymax = -28)); rm(queensland_map)
-         
-         ## assemble plot
-         plot(st_geometry(brisbane_map), col="dodgerblue", border="dodgerblue", lwd=0.25)
-         axis(side=1, at=c("152", "152.5", "153", "153.5"), labels=c("152°E", "152.5°E", "153°E", "153.5°E"))
-         axis(side=2, at=c("-28", "-27.8", "-27.6", "-27.4", "-27.2", "-27"), labels=c("-28°S", "-27.8°S", "-27.6°S", "-27.4°S", "-27.2°S", "-27°S"),las=2)
-         rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col=scales::alpha("white", 0.25), border="black", lwd=1)
-         
-         # plot(NULL, 
-         #      ylim=c(min(all_coordinates[,"latitude"]), max(all_coordinates[,"latitude"])),
-         #      xlim=c(min(all_coordinates[,"longitude"]), max(all_coordinates[,"longitude"])),
-         #      ylab="Latitude", xlab="Longitude")  
-         # 
+        
          ## add piecharts
          for (n in 1:nrow(waterbody_map)) {
            floating.pie(xpos=waterbody_map[,"lat"][n], ypos=-waterbody_map[,"long"][n], 
                         x=c(waterbody_map[,4][n], waterbody_map[,5][n]), radius=waterbody_map[,"scaled_total"][n],
                         col=c("purple", "darkgreen"))
          }
+     
+     ## 3 most abundant clone distributions
          
-         ## x axis scale
-         lines(x=c(152.1, 152.3), y=c(27.2, 27.2))
-         text(152.2, 27.21, labels="~20km")
+         ## top three lemna clones
+         lemna_micro_sites = micro_sites[which(substr(micro_sites[,"clone"],1,2) == "le"),]
+         top_three_lemna = names(rev(sort(table(lemna_micro_sites[,"clone"]))))[1:3]
          
-         ## y axis scale
-         lines(x=c(152.1, 152.1), y=c(27.2, 27.3))
-         text(152.16, 27.25, labels="~11km")
+         runner_clone = micro_sites[which(micro_sites[,"clone"] == top_three_lemna[1]),] 
+         for(i in 1:nrow(runner_clone)){
+           
+           for(j in 1:nrow(runner_clone)){
+             
+             segments(runner_clone[,"longitude"][i], -runner_clone[,"latitude"][i], 
+                      runner_clone[,"longitude"][j], -runner_clone[,"latitude"][j], col="grey")
+             
+           }
+         }
+         points(runner_clone[,"longitude"], -runner_clone[,"latitude"], pch=19, col="black")
          
+         runner_clone = micro_sites[which(micro_sites[,"clone"] == top_three_lemna[2]),] 
+         for(i in 1:nrow(runner_clone)){
+           
+           for(j in 1:nrow(runner_clone)){
+             
+             segments(runner_clone[,"longitude"][i], -runner_clone[,"latitude"][i], 
+                      runner_clone[,"longitude"][j], -runner_clone[,"latitude"][j], col="grey")
+             
+           }
+         }
+         points(runner_clone[,"longitude"], -runner_clone[,"latitude"], pch=19, col="black")
+         
+         runner_clone = micro_sites[which(micro_sites[,"clone"] == top_three_lemna[3]),] 
+         for(i in 1:nrow(runner_clone)){
+           
+           for(j in 1:nrow(runner_clone)){
+             
+             segments(runner_clone[,"longitude"][i], -runner_clone[,"latitude"][i], 
+                      runner_clone[,"longitude"][j], -runner_clone[,"latitude"][j], col="grey")
+             
+           }
+         }
+         points(runner_clone[,"longitude"], -runner_clone[,"latitude"], pch=19, col="black")
+         
+         ## could also barchart showing the number of waterbodies each clone is found in. 
+         
+         
+         
+         ## plot all connections
+         for (n in as.vector(na.omit(unique(micro_sites[,"clone"])))) {
+           
+           
+           
+           
+         }
+         ## plot all points
          
      ## Competitive environment ####
-     
-     ## read micro sites data
-     micro_sites = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/micro_sites.csv", sep=";")
-     
-     ## extract summary dataframe
-     micro_summary = data.frame("micro_site" = character(), "lemna" = integer(), "landoltia" = integer())
-     for (n in unique(micro_sites[,"micro_site_ID"])) {
-       micro_runner = micro_sites[which(micro_sites[,"micro_site_ID"] == n),, drop=FALSE]
-       filler_row = data.frame("micro_site" = n,
-                               "lemna" = sum(micro_runner[,"species"] == "lemna"), 
-                               "landoltia" = sum(micro_runner[,"species"] == "landoltia")) 
-       micro_summary = rbind(micro_summary, filler_row)
-     }
-     
-     ## total abundances
-     micro_summary[,"sum"] = apply(micro_summary[,2:3], 1, sum)
      
      # make categories for stacked barplot
      micro_summary[,"group"] = ifelse(micro_summary[,"lemna"] > 0 & micro_summary[,"landoltia"] == 0, "lemna",
