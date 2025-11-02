@@ -371,6 +371,17 @@
           
      }
      
+     ## add single individual clones
+     landoltia_multi_clones = as.vector(na.omit(as.vector(as.matrix(landoltia_clone_df))))
+     landoltia_single_clones = colnames(landoltia_hamdist)[which(!colnames(landoltia_hamdist) %in% landoltia_multi_clones)]
+     for (n in 1:length(landoltia_single_clones)) {
+       
+       runner_colname = paste("la_clone", ncol(landoltia_clone_df)+1, sep="")
+       
+       landoltia_clone_df[[runner_colname]] = c(landoltia_single_clones[n],rep(NA, nrow(landoltia_clone_df)-1))
+       
+     }
+     
      ## export table
      # write.csv(landoltia_clone_df, paste("Landoltia_clones_hamming0-",landoltia_clone_cutoff,".csv", sep=""))
      
@@ -551,6 +562,17 @@
        
      }
      
+     ## add single individual clones
+     lemna_multi_clones = as.vector(na.omit(as.vector(as.matrix(lemna_clone_df))))
+     lemna_single_clones = colnames(lemna_hamdist)[which(!colnames(lemna_hamdist) %in% lemna_multi_clones)]
+     for (n in 1:length(lemna_single_clones)) {
+       
+       runner_colname = paste("la_clone", ncol(lemna_clone_df)+1, sep="")
+       
+       lemna_clone_df[[runner_colname]] = c(lemna_single_clones[n],rep(NA, nrow(lemna_clone_df)-1))
+       
+     }
+     
      ## export table
      # write.csv(lemna_clone_df, paste("lemna_clones_hamming0-",lemna_clone_cutoff,".csv", sep=""))
      
@@ -597,7 +619,71 @@
      
      
 ## DATA VISUALISATION / RESULTS ####
-     ## maps ####
+     ## Numbers for M&M ####
+     
+     ## waterbody df
+     shared_waterbodies = data.frame(P1 = "landoltia",
+                                     P2 = "landoltia",
+                                     P4 = "landoltia",
+                                     P5 = "lemna",
+                                     P6 = "both",
+                                     P7 = "lemna",
+                                     P10 = "both",
+                                     P11 = "both",
+                                     P12 = "landoltia",
+                                     P13 = "landoltia",
+                                     P14 = "both",
+                                     P15 = "both",
+                                     P16 = "both",
+                                     P17 = "both",
+                                     P18 = "both",
+                                     P19 = "both",
+                                     P20 = "landoltia",
+                                     P21 = "lemna",
+                                     P22 = "both",
+                                     P23 = "both",
+                                     P24 = "landoltia",
+                                     P25 = "landoltia",
+                                     P26 = "landoltia",
+                                     P27 = "both",
+                                     P28 = "both",
+                                     P30 = "lemna",
+                                     P31 = "lemna",
+                                     P32 = "both",
+                                     P33 = "lemna",
+                                     P34 = "both",
+                                     P35 = "lemna",
+                                     P36 = "both")
+     
+     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P10"))
+     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P14"))
+     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P19"))
+     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P27"))
+     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P36"))
+     
+     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P10"))
+     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P14"))
+     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P19"))
+     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P27"))
+     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P36"))
+     
+     library(readxl)
+     sampling_data = read_xlsx("C:/Users/timte/Desktop/Brisbane/Chapter 1/Duckweed collection 30.12.2024 - for material methods.xlsx")
+     sampling_data = as.data.frame(sampling_data)
+     
+     range(as.numeric(sampling_data[,"DNA_fronds"]), na.rm=TRUE)
+     
+     
+     sort(unique(sampling_data[,"ID"]))
+     nrow(sampling_data)
+     
+     
+     
+     nrow(sampling_data)
+     
+     sd
+     
+     ## MAP ####
      
      ## read and transform coordinates
      all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
@@ -643,38 +729,36 @@
      names(coor_df)[1] = "samples"
      micro_sites = merge(micro_sites, coor_df, by="samples")
      
-     
-     ## create underlying map plot
-     
-         ## load shapefiles
-         sf_use_s2(FALSE)
-         brisbane_waterbodies = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Brisbane wetland areas/Wetland_areas.shp")
-         brisbane_waterbodies = st_make_valid(brisbane_waterbodies)
-         brisbane_waterbodies = st_crop(brisbane_waterbodies, c(xmin = min(all_coordinates[,"longitude"])-0.01,
-                                                                xmax = max(all_coordinates[,"longitude"])+0.05,
-                                                                ymin = -max(all_coordinates[,"latitude"])-0.05,
-                                                                ymax = -min(all_coordinates[,"latitude"])+0.05))
-                                                
-         brisbane_coastline = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Brisbane coastline/Coastline.shp")
-         brisbane_coastline = st_crop(brisbane_coastline, c(xmin = min(all_coordinates[,"longitude"])-0.01,
+     ## load shapefiles
+     sf_use_s2(FALSE)
+     brisbane_waterbodies = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Brisbane wetland areas/Wetland_areas.shp")
+     brisbane_waterbodies = st_make_valid(brisbane_waterbodies)
+     brisbane_waterbodies = st_crop(brisbane_waterbodies, c(xmin = min(all_coordinates[,"longitude"])-0.01,
                                                             xmax = max(all_coordinates[,"longitude"])+0.05,
                                                             ymin = -max(all_coordinates[,"latitude"])-0.05,
                                                             ymax = -min(all_coordinates[,"latitude"])+0.05))
-         
-         ## align shapefiles
-         brisbane_waterbodies = st_transform(brisbane_waterbodies, st_crs(brisbane_coastline))
-         
-         ## buffer around coast
-         sf_use_s2(TRUE)
-         coast_buffer = st_buffer(brisbane_coastline, dist = 5)
-         
-         ## separate land and sea
-         is_saltwater = lengths(st_intersects(brisbane_waterbodies, coast_buffer)) > 0
-         brisbane_saltwater = brisbane_waterbodies[is_saltwater, ]
-         brisbane_freshwater = brisbane_waterbodies[!is_saltwater, ]
-         
-         ## assemble plot
-         par(mar=c(0,0,0,0))
+                                            
+     brisbane_coastline = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Brisbane coastline/Coastline.shp")
+     brisbane_coastline = st_crop(brisbane_coastline, c(xmin = min(all_coordinates[,"longitude"])-0.01,
+                                                        xmax = max(all_coordinates[,"longitude"])+0.05,
+                                                        ymin = -max(all_coordinates[,"latitude"])-0.05,
+                                                        ymax = -min(all_coordinates[,"latitude"])+0.05))
+     
+     ## align shapefiles
+     brisbane_waterbodies = st_transform(brisbane_waterbodies, st_crs(brisbane_coastline))
+     
+     ## buffer around coast
+     sf_use_s2(TRUE)
+     coast_buffer = st_buffer(brisbane_coastline, dist = 5)
+     
+     ## separate land and sea
+     is_saltwater = lengths(st_intersects(brisbane_waterbodies, coast_buffer)) > 0
+     brisbane_saltwater = brisbane_waterbodies[is_saltwater, ]
+     brisbane_freshwater = brisbane_waterbodies[!is_saltwater, ]
+     
+     ## assemble piechart plot
+     
+         #par(mar=c(0,0,0,0))
          plot(st_geometry(brisbane_freshwater), col = "dodgerblue", border = NA)
          plot(st_geometry(brisbane_saltwater), col = "white", border = NA, add = TRUE)
          plot(st_geometry(brisbane_coastline), col = "black", lwd = 1, add = TRUE)
@@ -683,11 +767,9 @@
               max(all_coordinates[,"longitude"])+0.05,
               -min(all_coordinates[,"latitude"])+0.05,
               col=scales::alpha("white", 0.25), border="black", lwd=1)
-         # axis(side=1, at=c("152", "152.5", "153", "153.5"), labels=c("152°E", "152.5°E", "153°E", "153.5°E"))
-         # axis(side=2, at=c("-28", "-27.8", "-27.6", "-27.4", "-27.2", "-27"), labels=c("-28°S", "-27.8°S", "-27.6°S", "-27.4°S", "-27.2°S", "-27°S"),las=2)
+         axis(side=1, at=c("152", "152.5", "153", "153.5"), labels=c("152°E", "152.5°E", "153°E", "153.5°E"))
+         axis(side=2, at=c("-28", "-27.8", "-27.6", "-27.4", "-27.2", "-27"), labels=c("-28°S", "-27.8°S", "-27.6°S", "-27.4°S", "-27.2°S", "-27°S"),las=2)
           
-     ## waterbody piecharts
-     
          ## extract waterbody data
          waterbody_map = data.frame(matrix(0, ncol=6,nrow = 0))
          m=0; for (n in unique(substr(micro_sites[,"micro_site_ID"],1,3))){
@@ -721,62 +803,7 @@
                         col=c("purple", "darkgreen"))
          }
      
-     ## 3 most abundant clone distributions
-         
-         ## top three lemna clones
-         lemna_micro_sites = micro_sites[which(substr(micro_sites[,"clone"],1,2) == "le"),]
-         top_three_lemna = names(rev(sort(table(lemna_micro_sites[,"clone"]))))[1:3]
-         
-         runner_clone = micro_sites[which(micro_sites[,"clone"] == top_three_lemna[1]),] 
-         for(i in 1:nrow(runner_clone)){
-           
-           for(j in 1:nrow(runner_clone)){
-             
-             segments(runner_clone[,"longitude"][i], -runner_clone[,"latitude"][i], 
-                      runner_clone[,"longitude"][j], -runner_clone[,"latitude"][j], col="grey")
-             
-           }
-         }
-         points(runner_clone[,"longitude"], -runner_clone[,"latitude"], pch=19, col="black")
-         
-         runner_clone = micro_sites[which(micro_sites[,"clone"] == top_three_lemna[2]),] 
-         for(i in 1:nrow(runner_clone)){
-           
-           for(j in 1:nrow(runner_clone)){
-             
-             segments(runner_clone[,"longitude"][i], -runner_clone[,"latitude"][i], 
-                      runner_clone[,"longitude"][j], -runner_clone[,"latitude"][j], col="grey")
-             
-           }
-         }
-         points(runner_clone[,"longitude"], -runner_clone[,"latitude"], pch=19, col="black")
-         
-         runner_clone = micro_sites[which(micro_sites[,"clone"] == top_three_lemna[3]),] 
-         for(i in 1:nrow(runner_clone)){
-           
-           for(j in 1:nrow(runner_clone)){
-             
-             segments(runner_clone[,"longitude"][i], -runner_clone[,"latitude"][i], 
-                      runner_clone[,"longitude"][j], -runner_clone[,"latitude"][j], col="grey")
-             
-           }
-         }
-         points(runner_clone[,"longitude"], -runner_clone[,"latitude"], pch=19, col="black")
-         
-         ## could also barchart showing the number of waterbodies each clone is found in. 
-         
-         
-         
-         ## plot all connections
-         for (n in as.vector(na.omit(unique(micro_sites[,"clone"])))) {
-           
-           
-           
-           
-         }
-         ## plot all points
-         
-     ## Competitive environment ####
+     ## MICRO FIGURE: Micro sampling & competitive environment ####
      
      # make categories for stacked barplot
      micro_summary[,"group"] = ifelse(micro_summary[,"lemna"] > 0 & micro_summary[,"landoltia"] == 0, "lemna",
@@ -819,18 +846,15 @@
            
            ## compute mean
            filler_row = data.frame("micro_site" = n,
-                                   "lemna_avg_distance" = mean(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]),
+                                   "lemna_avg_distance" = if(length(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]) == 0) 0 else mean(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]),
                                    "lemna_sd_distance" = sd(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]),
-                                   "landoltia_avg_distance" = mean(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)]),
+                                   "landoltia_avg_distance" = if(length(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)]) == 0) 0 else mean(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)]),
                                    "landoltia_sd_distance" = sd(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)])) 
            micro_distance = rbind(micro_distance, filler_row)
          }
          
          ## merge to micro_summary
-         micro_merged_summary = merge(micro_summary, micro_distance, by="micro_site")
-         
-         ## subset for both
-         micro_scatter_plotter = micro_merged_summary[which(micro_merged_summary[,"group"] == "both"),]
+         micro_scatter_plotter = merge(micro_summary, micro_distance, by="micro_site")
          micro_scatter_plotter[6:9] = (micro_scatter_plotter[6:9])^(1/3)
          
          ## set screens
@@ -842,160 +866,182 @@
          screen(1)
          par(mar=c(4,4,0,0))
          plot(NULL, xlab="within micro site genetic distance*(1/3) (Lemna)", ylab="within micro site genetic distance*(1/3) (Landoltia)",
-              xlim=c(0,1.2), ylim=c(0,1))
+              xlim=c(0,0.7), ylim=c(0,0.7))
          
-         ## x axis error bars
-         suppressWarnings(
-         arrows(micro_scatter_plotter[,"lemna_avg_distance"] - micro_scatter_plotter[,"lemna_sd_distance"], 
-                micro_scatter_plotter[,"landoltia_avg_distance"], 
-                micro_scatter_plotter[,"lemna_avg_distance"] + micro_scatter_plotter[,"lemna_sd_distance"], 
-                micro_scatter_plotter[,"landoltia_avg_distance"],
-                angle = 90, code = 3, length = 0.05, col="gray70"))
-         
-         ## y axis error bars
-         suppressWarnings(
-         arrows(micro_scatter_plotter[,"lemna_avg_distance"], 
-                micro_scatter_plotter[,"landoltia_avg_distance"] - micro_scatter_plotter[,"landoltia_sd_distance"], 
-                micro_scatter_plotter[,"lemna_avg_distance"], 
-                micro_scatter_plotter[,"landoltia_avg_distance"] + micro_scatter_plotter[,"landoltia_sd_distance"], 
-                angle = 90, code = 3, length = 0.1, col="gray70"))
-         ## points
-         points(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"],
-                col="black", cex=1.2,
-                pch=ifelse(micro_scatter_plotter[,"sum"] == 3, 15,
-                           ifelse(micro_scatter_plotter[,"sum"] == 4, 16,
-                                  ifelse(micro_scatter_plotter[,"sum"] == 5, 17, 18))))
-                                                       
-         ## acessories
+         ## x=y under the points
          abline(a = 0, b = 1, lty=2, lwd=2, col="gray50")
-         legend("bottomright", inset=0.01, legend=c("n=3","n=4", "n=5", "n=6"),
-                pch=c(15, 16, 17, 18))
+         
+         ## points
+         col_grad = colorRampPalette(c("white", "black"))
+         points(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"],
+                pch=ifelse(micro_scatter_plotter[,"group"] == "both", 21, 22),
+                bg=ifelse(micro_scatter_plotter[,"sum"] == 1, col_grad(12)[1],
+                          ifelse(micro_scatter_plotter[,"sum"] == 2, col_grad(12)[4],
+                                 ifelse(micro_scatter_plotter[,"sum"] == 3, col_grad(12)[6],
+                                        ifelse(micro_scatter_plotter[,"sum"] == 4, col_grad(12)[8],
+                                               ifelse(micro_scatter_plotter[,"sum"] == 5, col_grad(12)[10], col_grad(12)[12]))))),
+                  cex=ifelse(micro_scatter_plotter[,"sum"] == 1, 0.5,
+                            ifelse(micro_scatter_plotter[,"sum"] == 2, 1.5,
+                                   ifelse(micro_scatter_plotter[,"sum"] == 3, 2,
+                                          ifelse(micro_scatter_plotter[,"sum"] == 4, 2.5,
+                                                 ifelse(micro_scatter_plotter[,"sum"] == 5, 3, 3.5))))))
+         
+         ## legend on top of the points/line                                              
+         legend("topright", inset=0.01, legend=c("multi species", "single species"),
+                pch=c(21, 22))
          close.screen(1)
      
          ## add landoltia histogram
          screen(2)
+         par(mgp=c(1,0,0))
          landoltia_breaks = pretty(range(c(0,max(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]^(1/3)))), n = 15)
          landoltia_micro_hist = hist(micro_merged_summary[,"landoltia_avg_distance"]^(1/3), breaks=landoltia_breaks, plot=FALSE)
          landoltia_global_hist = hist(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]^(1/3), breaks=landoltia_breaks, plot=FALSE)
          ## assemble plot
          par(mar=c(4,0,0,0.5))
-         plot(0, 0, type = "n", xlim = c(0, max(landoltia_micro_hist$density, landoltia_global_hist$density)), ylim = c(0,1), axes = FALSE, xlab = "Density", ylab = "")
+         plot(0, 0, type = "n", xlim = c(0, max(landoltia_micro_hist$density, landoltia_global_hist$density)), ylim = c(0,0.7), axes = FALSE, xlab = "Density", ylab = "")
          ## plot global
          for (n in seq_along(landoltia_global_hist$density)) {rect(0, landoltia_global_hist$breaks[n], landoltia_global_hist$density[n], landoltia_global_hist$breaks[n+1], col = scales::alpha("black",0.5), border = "black")}
          ## plot micro
          for (n in seq_along(landoltia_micro_hist$density)) {rect(0, landoltia_micro_hist$breaks[n], landoltia_micro_hist$density[n], landoltia_micro_hist$breaks[n+1], col = scales::alpha("purple",0.75), border = "black")}
-         axis(1); box()
-         legend("topleft", inset=0.02, col=c("purple", scales::alpha("black",0.5)),legend=c("micro", "global"), pch=15)
+         box()
+         legend("topright", inset=0.02, col=c("purple", scales::alpha("black",0.5)),legend=c("micro", "global"), pch=15)
          close.screen(2)
          
          ## add lemna histogram
          screen(3)
+         par(mgp=c(1,0,0))
          lemna_breaks = pretty(range(c(0,max(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]^(1/3)))), n = 15)
          lemna_micro_hist = hist(micro_merged_summary[,"lemna_avg_distance"]^(1/3), breaks=lemna_breaks, plot=FALSE)
          lemna_global_hist = hist(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]^(1/3), breaks=lemna_breaks, plot=FALSE)
          ## assemble plot
          par(mar=c(0,4,0.5,0))
-         plot(0, 0, type = "n", ylim = c(0, max(lemna_micro_hist$density, lemna_global_hist$density)), xlim = c(0,1.2), axes = FALSE, xlab = "", ylab = "Density")
+         plot(0, 0, type = "n", ylim = c(0, max(lemna_micro_hist$density, lemna_global_hist$density)), xlim = c(0,0.7), axes = FALSE, xlab = "", ylab = "Density")
          ## plot global
          for (n in seq_along(lemna_global_hist$density)) {rect(lemna_global_hist$breaks[n],0, lemna_global_hist$breaks[n+1], lemna_global_hist$density[n], ,col = scales::alpha("black",0.5), border = "black")}
          ## plot micro
          for (n in seq_along(lemna_micro_hist$density)) {rect(lemna_micro_hist$breaks[n],0, lemna_micro_hist$breaks[n+1], lemna_micro_hist$density[n], ,col = scales::alpha("darkgreen",0.75), border = "black")}
-         axis(2); box()
+         box()
          legend("topright", inset=0.02, col=c("darkgreen", scales::alpha("black",0.5)),legend=c("micro", "global"), pch=15)
          close.screen(3)
          close.screen(all.screens = TRUE)
          
-     ## other stuff
+     ## WATERBODY FIGURE: competitive environment ####
          
-     length(which(micro_summary[,"group"] == "both"))
-     length(which(micro_summary[,"group"] == "lemna"))
-     length(which(micro_summary[,"group"] == "landoltia"))
+         
+     ## WATERBODY FIGURE: Within vs outside distance & diversity ####
      
-     length(unique(micro_sites[,"micro_site_ID"]))
+     ## number of iterations
+     iter = 1000
      
-     length(which((substr(colnames(landoltia_hamdist),1,3)) == "P10"))
-     length(which((substr(colnames(landoltia_hamdist),1,3)) == "P14"))
-     length(which((substr(colnames(landoltia_hamdist),1,3)) == "P19"))
-     length(which((substr(colnames(landoltia_hamdist),1,3)) == "P27"))
-     length(which((substr(colnames(landoltia_hamdist),1,3)) == "P36"))
+     ## set screens
+     split.screen(rbind(c(0, 0.55, 0.5, 1), 
+                        c(0, 0.55, 0, 0.5),
+                        c(0.55, 1, 0.5, 1), 
+                        c(0.55, 1, 0, 0.5)))
      
-     length(which((substr(colnames(lemna_hamdist),1,3)) == "P10"))
-     length(which((substr(colnames(lemna_hamdist),1,3)) == "P14"))
-     length(which((substr(colnames(lemna_hamdist),1,3)) == "P19"))
-     length(which((substr(colnames(lemna_hamdist),1,3)) == "P27"))
-     length(which((substr(colnames(lemna_hamdist),1,3)) == "P36"))
+     ## LANDOLTIA
      
-     length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P10"),][,"micro_site_ID"]))
-     length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P14"),][,"micro_site_ID"]))
-     length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P19"),][,"micro_site_ID"]))
-     length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P27"),][,"micro_site_ID"]))
-     length(unique(micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == "P36"),][,"micro_site_ID"]))
+         ## subset the ponds   
+         landoltia_p10 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P10"),which(substr(colnames(landoltia_hamdist),1,3) == "P10")]
+         landoltia_p14 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P14"),which(substr(colnames(landoltia_hamdist),1,3) == "P14")]
+         landoltia_p19 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P19"),which(substr(colnames(landoltia_hamdist),1,3) == "P19")]
+         landoltia_p27 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P27"),which(substr(colnames(landoltia_hamdist),1,3) == "P27")]
+         landoltia_p36 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P36"),which(substr(colnames(landoltia_hamdist),1,3) == "P36")]
+         
+         ## calculate permutations
+         landoltia_perm_mean = vector()
+         landoltia_perm_clone = vector()
+         landoltia_perm_diversity = vector()
+         for (n in 1:iter) {
+           
+           sim_size = sample(20:27,1)
+           runner_sample = sample(colnames(landoltia_hamdist), sim_size)
+           runner_matrix = landoltia_hamdist[runner_sample,runner_sample]
+           landoltia_perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
+           landoltia_perm_clone[n] = ncol(hamdist_to_rarecurve(runner_matrix))
+           landoltia_perm_diversity[n] = diversity(hamdist_to_rarecurve(runner_matrix))
+         }
+         
+         ## mean plot
+         par(mar=c(0.3,4.5,0.3,0.3))
+         screen(1)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", ylab="Genetic distance", las=2)
+         points(1, mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]), pch=21, bg="purple", cex=2)
+         points(2, mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]), pch=21, bg="purple", cex=2)
+         points(3, mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]), pch=21, bg="purple", cex=2)
+         points(4, mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]), pch=21, bg="purple", cex=2)
+         points(5, mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]), pch=21, bg="purple", cex=2)
+         points(rep(6,iter), landoltia_perm_mean, pch=21, bg="purple", cex=2)
+         abline(h=quantile(landoltia_perm_mean, probs = c(0.001, 0.999)), lty=2, lwd=2)
+         close.screen(1)
+         
+         ## diversity plot
+         par(mar=c(3,4.5,0.3,0.3))
+         screen(2)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(-0.1,3.3), xlab="", main="", xaxt = "n", ylab="Diversity (Shannon)", las=2)
+         axis(1, at = 1:6, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm"))
+         points(1, diversity(hamdist_to_rarecurve(landoltia_p10)),pch=21, bg="purple", cex=2)
+         points(2, diversity(hamdist_to_rarecurve(landoltia_p14)),pch=21, bg="purple", cex=2)
+         points(3, diversity(hamdist_to_rarecurve(landoltia_p19)),pch=21, bg="purple", cex=2)
+         points(4, diversity(hamdist_to_rarecurve(landoltia_p27)),pch=21, bg="purple", cex=2)
+         points(5, diversity(hamdist_to_rarecurve(landoltia_p36)),pch=21, bg="purple", cex=2)
+         points(rep(6,iter), landoltia_perm_diversity, pch=21, bg="purple", cex=2)
+         abline(h=quantile(landoltia_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=2)
+         close.screen(2)
+         
+     ## LEMNA
      
+         ## subset the ponds   
+         lemna_p10 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P10"),which(substr(colnames(lemna_hamdist),1,3) == "P10")]
+         lemna_p14 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P14"),which(substr(colnames(lemna_hamdist),1,3) == "P14")]
+         lemna_p19 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P19"),which(substr(colnames(lemna_hamdist),1,3) == "P19")]
+         lemna_p27 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P27"),which(substr(colnames(lemna_hamdist),1,3) == "P27")]
+         lemna_p36 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P36"),which(substr(colnames(lemna_hamdist),1,3) == "P36")]
+         
+         ## calculate permutations
+         lemna_perm_mean = vector()
+         lemna_perm_clone = vector()
+         lemna_perm_diversity = vector()
+         for (n in 1:iter) {
+           
+           sim_size = sample(20:27,1)
+           runner_sample = sample(colnames(lemna_hamdist), sim_size)
+           runner_matrix = lemna_hamdist[runner_sample,runner_sample]
+           lemna_perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
+           lemna_perm_clone[n] = ncol(hamdist_to_rarecurve(runner_matrix))
+           lemna_perm_diversity[n] = diversity(hamdist_to_rarecurve(runner_matrix))
+         }
+         
+         ## mean plot
+         par(mar=c(0.3,0.3,0.3,0.3))
+         screen(3)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", yaxt="n", ylab="Genetic distance", las=2)
+         points(1, mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
+         points(2, mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
+         points(3, mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
+         points(4, mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
+         points(5, mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
+         points(rep(6,iter), lemna_perm_mean, pch=21, bg="darkgreen", cex=2)
+         abline(h=quantile(lemna_perm_mean, probs = c(0.001, 0.999)), lty=2, lwd=2)
+         close.screen(3)
+         
+         ## diversity plot
+         par(mar=c(3,0.3,0.3,0.3))
+         screen(4)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(-0.1,3.3), xlab="", main="", xaxt = "n",  yaxt="n", ylab="Diversity (Shannon)", las=2)
+         axis(1, at = 1:6, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm"))
+         points(1, diversity(hamdist_to_rarecurve(lemna_p10)),pch=21, bg="darkgreen", cex=2)
+         points(2, diversity(hamdist_to_rarecurve(lemna_p14)),pch=21, bg="darkgreen", cex=2)
+         points(3, diversity(hamdist_to_rarecurve(lemna_p19)),pch=21, bg="darkgreen", cex=2)
+         points(4, diversity(hamdist_to_rarecurve(lemna_p27)),pch=21, bg="darkgreen", cex=2)
+         points(5, diversity(hamdist_to_rarecurve(lemna_p36)),pch=21, bg="darkgreen", cex=2)
+         points(rep(6,iter), lemna_perm_diversity, pch=21, bg="darkgreen", cex=2)
+         abline(h=quantile(lemna_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=2)
+         close.screen(4)
+         
      
-     ## Numbers for M&M ####
-     
-     ## waterbody df
-     shared_waterbodies = data.frame(P1 = "landoltia",
-                                     P2 = "landoltia",
-                                     P4 = "landoltia",
-                                     P5 = "lemna",
-                                     P6 = "both",
-                                     P7 = "lemna",
-                                     P10 = "both",
-                                     P11 = "both",
-                                     P12 = "landoltia",
-                                     P13 = "landoltia",
-                                     P14 = "both",
-                                     P15 = "both",
-                                     P16 = "both",
-                                     P17 = "both",
-                                     P18 = "both",
-                                     P19 = "both",
-                                     P20 = "landoltia",
-                                     P21 = "lemna",
-                                     P22 = "both",
-                                     P23 = "both",
-                                     P24 = "landoltia",
-                                     P25 = "landoltia",
-                                     P26 = "landoltia",
-                                     P27 = "both",
-                                     P28 = "both",
-                                     P30 = "lemna",
-                                     P31 = "lemna",
-                                     P32 = "both",
-                                     P33 = "lemna",
-                                     P34 = "both",
-                                     P35 = "lemna",
-                                     P36 = "both")
-      
-     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P10"))
-     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P14"))
-     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P19"))
-     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P27"))
-     length(which(substr(colnames(landoltia_hamdist),1,3) %in% "P36"))
-     
-     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P10"))
-     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P14"))
-     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P19"))
-     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P27"))
-     length(which(substr(colnames(lemna_hamdist),1,3) %in% "P36"))
-     
-     library(readxl)
-     sampling_data = read_xlsx("C:/Users/timte/Desktop/Brisbane/Chapter 1/Duckweed collection 30.12.2024 - for material methods.xlsx")
-     sampling_data = as.data.frame(sampling_data)
-     
-     range(as.numeric(sampling_data[,"DNA_fronds"]), na.rm=TRUE)
-                
-     
-     sort(unique(sampling_data[,"ID"]))
-     nrow(sampling_data)
-     
-     
-     
-     nrow(sampling_data)
-     
-     sd
-     ## FIGURE 1: Kinship Heatmaps ####
+     ## POPULATION: Kinship Heatmaps ####
      
      ## LANDOLTIA
      
@@ -1107,7 +1153,7 @@
        close.screen(2)
        close.screen(all.screens=TRUE)
        
-     ## FIGURE 2: Distance Decay Plots ####
+     ## POPULATION: Distance Decay Plots ####
      
      ## read and transform coordinates
      all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
@@ -1182,179 +1228,27 @@
      ## LEMNA
      vegan::mantel(lemna_hamdist, lemna_geodist, permutations = 1000)
      
-     ## FIGURE 3: Within vs outside distance/diversity/clone number ####
+     ## POPULATION: Clone Distribution ####
+    
+     ## create boxplot with lemna clone dist and landoltia clone dist
      
-     ## number of iterations
-     iter = 1000
+     ## extract # of waterbody for each clone
      
-     ## set screens
-     split.screen(rbind(c(0, 0.55, 0.66, 1), 
-                        c(0, 0.55, 0.33, 0.66),
-                        c(0, 0.55, 0, 0.33),
-                        c(0.55, 1, 0.66, 1), 
-                        c(0.55, 1, 0.33, 0.66),
-                        c(0.55, 1, 0, 0.33)))
-
-     ## LANDOLTIA
+     landoltia_boxplotter = sapply(apply(landoltia_clone_df, 2, function(x) unique(na.omit(substr(x,1,3)))),length)
+     lemna_boxplotter = sapply(apply(lemna_clone_df, 2, function(x) unique(na.omit(substr(x,1,3)))),length)
      
-         ## subset the ponds   
-         landoltia_p10 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P10"),which(substr(colnames(landoltia_hamdist),1,3) == "P10")]
-         landoltia_p14 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P14"),which(substr(colnames(landoltia_hamdist),1,3) == "P14")]
-         landoltia_p19 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P19"),which(substr(colnames(landoltia_hamdist),1,3) == "P19")]
-         landoltia_p27 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P27"),which(substr(colnames(landoltia_hamdist),1,3) == "P27")]
-         landoltia_p36 = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == "P36"),which(substr(colnames(landoltia_hamdist),1,3) == "P36")]
-         
-         ## calculate permutations
-         landoltia_perm_mean = vector()
-         landoltia_perm_clone = vector()
-         landoltia_perm_diversity = vector()
-         for (n in 1:iter) {
-           
-           sim_size = sample(20:27,1)
-           runner_sample = sample(colnames(landoltia_hamdist), sim_size)
-           runner_matrix = landoltia_hamdist[runner_sample,runner_sample]
-           landoltia_perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
-           landoltia_perm_clone[n] = ncol(hamdist_to_rarecurve(runner_matrix))
-           landoltia_perm_diversity[n] = diversity(hamdist_to_rarecurve(runner_matrix))
-         }
-         
-         ## mean plot
-         par(mar=c(0.3,4.5,0.3,0.3))
-         screen(1)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", ylab="Genetic distance", las=2)
-         points(1, mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]), pch=21, bg="purple", cex=2)
-         points(2, mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]), pch=21, bg="purple", cex=2)
-         points(3, mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]), pch=21, bg="purple", cex=2)
-         points(4, mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]), pch=21, bg="purple", cex=2)
-         points(5, mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]), pch=21, bg="purple", cex=2)
-         points(rep(6,iter), landoltia_perm_mean, pch=21, bg="purple", cex=2)
-         abline(h=quantile(landoltia_perm_mean, probs = c(0.001, 0.999)), lty=2, lwd=2)
-         close.screen(1)
-         
-         ## diversity plot
-         par(mar=c(0.3,4.5,0.3,0.3))
-         screen(2)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(-0.1,3.3), xlab="", main="", xaxt = "n", ylab="Diversity (Shannon)", las=2)
-         points(1, diversity(hamdist_to_rarecurve(landoltia_p10)),pch=21, bg="purple", cex=2)
-         points(2, diversity(hamdist_to_rarecurve(landoltia_p14)),pch=21, bg="purple", cex=2)
-         points(3, diversity(hamdist_to_rarecurve(landoltia_p19)),pch=21, bg="purple", cex=2)
-         points(4, diversity(hamdist_to_rarecurve(landoltia_p27)),pch=21, bg="purple", cex=2)
-         points(5, diversity(hamdist_to_rarecurve(landoltia_p36)),pch=21, bg="purple", cex=2)
-         points(rep(6,iter), landoltia_perm_diversity, pch=21, bg="purple", cex=2)
-         abline(h=quantile(landoltia_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=2)
-         close.screen(2)
-         
-         ## clones plot
-         par(mar=c(3,4.5,0.3,0.3))
-         screen(3)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,27), xlab="", main="", xaxt = "n", ylab="Number of clones", las=2)
-         axis(1, at = 1:6, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm"))
-         points(1, ncol(hamdist_to_rarecurve(landoltia_p10)),pch=21, bg="purple", cex=2)
-         points(2, ncol(hamdist_to_rarecurve(landoltia_p14)),pch=21, bg="purple", cex=2)
-         points(3, ncol(hamdist_to_rarecurve(landoltia_p19)),pch=21, bg="purple", cex=2)
-         points(4, ncol(hamdist_to_rarecurve(landoltia_p27)),pch=21, bg="purple", cex=2)
-         points(5, ncol(hamdist_to_rarecurve(landoltia_p36)),pch=21, bg="purple", cex=2)
-         points(rep(6,iter), landoltia_perm_clone, pch=21, bg="purple", cex=2)
-         abline(h=quantile(landoltia_perm_clone, probs = c(0.001, 0.999)), lty=2, lwd=2)
-         close.screen(3)
-         
-     ## LEMNA
+     plot(1:length(landoltia_boxplotter), rev(sort(landoltia_boxplotter)))
+     plot(1:length(lemna_boxplotter), rev(sort(lemna_boxplotter)))
      
-         ## subset the ponds   
-         lemna_p10 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P10"),which(substr(colnames(lemna_hamdist),1,3) == "P10")]
-         lemna_p14 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P14"),which(substr(colnames(lemna_hamdist),1,3) == "P14")]
-         lemna_p19 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P19"),which(substr(colnames(lemna_hamdist),1,3) == "P19")]
-         lemna_p27 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P27"),which(substr(colnames(lemna_hamdist),1,3) == "P27")]
-         lemna_p36 = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == "P36"),which(substr(colnames(lemna_hamdist),1,3) == "P36")]
-         
-         ## calculate permutations
-         lemna_perm_mean = vector()
-         lemna_perm_clone = vector()
-         lemna_perm_diversity = vector()
-         for (n in 1:iter) {
-           
-           sim_size = sample(20:27,1)
-           runner_sample = sample(colnames(lemna_hamdist), sim_size)
-           runner_matrix = lemna_hamdist[runner_sample,runner_sample]
-           lemna_perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
-           lemna_perm_clone[n] = ncol(hamdist_to_rarecurve(runner_matrix))
-           lemna_perm_diversity[n] = diversity(hamdist_to_rarecurve(runner_matrix))
-         }
-         
-         ## mean plot
-         par(mar=c(0.3,0.3,0.3,0.3))
-         screen(4)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", yaxt="n", ylab="Genetic distance", las=2)
-         points(1, mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
-         points(2, mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
-         points(3, mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
-         points(4, mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
-         points(5, mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]), pch=21, bg="darkgreen", cex=2)
-         points(rep(6,iter), lemna_perm_mean, pch=21, bg="darkgreen", cex=2)
-         abline(h=quantile(lemna_perm_mean, probs = c(0.001, 0.999)), lty=2, lwd=2)
-         close.screen(4)
-         
-         ## diversity plot
-         par(mar=c(0.3,0.3,0.3,0.3))
-         screen(5)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(-0.1,3.3), xlab="", main="", xaxt = "n",  yaxt="n", ylab="Diversity (Shannon)", las=2)
-         points(1, diversity(hamdist_to_rarecurve(lemna_p10)),pch=21, bg="darkgreen", cex=2)
-         points(2, diversity(hamdist_to_rarecurve(lemna_p14)),pch=21, bg="darkgreen", cex=2)
-         points(3, diversity(hamdist_to_rarecurve(lemna_p19)),pch=21, bg="darkgreen", cex=2)
-         points(4, diversity(hamdist_to_rarecurve(lemna_p27)),pch=21, bg="darkgreen", cex=2)
-         points(5, diversity(hamdist_to_rarecurve(lemna_p36)),pch=21, bg="darkgreen", cex=2)
-         points(rep(6,iter), lemna_perm_diversity, pch=21, bg="darkgreen", cex=2)
-         abline(h=quantile(lemna_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=2)
-         close.screen(5)
-         
-         ## clones plot
-         par(mar=c(3,0.3,0.3,0.3))
-         screen(6)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,27), xlab="", main="", xaxt = "n", yaxt="n", ylab="Number of clones", las=2)
-         axis(1, at = 1:6, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm"))
-         points(1, ncol(hamdist_to_rarecurve(lemna_p10)),pch=21, bg="darkgreen", cex=2)
-         points(2, ncol(hamdist_to_rarecurve(lemna_p14)),pch=21, bg="darkgreen", cex=2)
-         points(3, ncol(hamdist_to_rarecurve(lemna_p19)),pch=21, bg="darkgreen", cex=2)
-         points(4, ncol(hamdist_to_rarecurve(lemna_p27)),pch=21, bg="darkgreen", cex=2)
-         points(5, ncol(hamdist_to_rarecurve(lemna_p36)),pch=21, bg="darkgreen", cex=2)
-         points(rep(6,iter), lemna_perm_clone, pch=21, bg="darkgreen", cex=2)
-         abline(h=quantile(lemna_perm_clone, probs = c(0.001, 0.999)), lty=2, lwd=2)
-         close.screen(6)
-         
-     ## Figure 4: Trees ####
+     boxplot(landoltia_boxplotter, lemna_boxplotter)
      
-     ## compute trees  
-     landoltia_tree = bionj(landoltia_hamdist)
-     landoltia_tree$edge.length[landoltia_tree$edge.length < 0] <- 0
-     landoltia_chronotree = chronos(landoltia_tree,control = chronos.control(iter.max = 1000), model="relaxed")
-     landoltia_chronotree$tip.label = substr(landoltia_chronotree$tip.label,1,3)
+     boxplot(landoltia_boxplotter)blemna_boxplotteroxplot(landoltia_boxplotter)
      
-     lemna_tree = bionj(lemna_hamdist)
-     lemna_tree$edge.length[lemna_tree$edge.length < 0] <- 0
-     lemna_chronotree = chronos(lemna_tree,control = chronos.control(iter.max = 1000), model="relaxed")
-     lemna_chronotree$tip.label = substr(lemna_chronotree$tip.label,1,3)
-     
-     ## plot trees
-     
-     par(mfrow=c(1,2))
-     par(mar=c(0,0,0,0))
-     plot.phylo(landoltia_chronotree, cex=0.6, type = "fan", tip.color=ifelse(grepl("P10", landoltia_chronotree$tip.label), "red",
-                                                                              ifelse(grepl("P14", landoltia_chronotree$tip.label), "blue", 
-                                                                                     ifelse(grepl("P19", landoltia_chronotree$tip.label), "darkgreen",
-                                                                                            ifelse(grepl("P27", landoltia_chronotree$tip.label), "purple",
-                                                                                                   ifelse(grepl("P36", landoltia_chronotree$tip.label), "orange", "black")))))
-     )
-     par(mar=c(0,0,0,0))
-     plot.phylo(lemna_chronotree, cex=0.6, type = "fan", tip.color=ifelse(grepl("P10", lemna_chronotree$tip.label), "red",
-                                                                          ifelse(grepl("P14", lemna_chronotree$tip.label), "blue", 
-                                                                                 ifelse(grepl("P19", lemna_chronotree$tip.label), "darkgreen",
-                                                                                        ifelse(grepl("P27", lemna_chronotree$tip.label), "purple",
-                                                                                               ifelse(grepl("P36", lemna_chronotree$tip.label), "orange", "black")))))
-                                                                    
-     ) 
+     hist(lemna_boxplotter)
+     hist(boxplotter)
      
      
-     
+     sd
      ## Figure 5: PCAs ####
      
      ## LANDOLTIA
@@ -1505,408 +1399,6 @@
                                                         ifelse(grepl("P36", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "orange", "black")))))
          )
          
-     ## FIGURE X: triplet sampling ####
-     
-     par(mfrow=c(1,2))
-     
-     ## LANDOLTIA triplets    
-     landoltia_same_location = data.frame(site1 = c("P1S2",NA,NA),
-                                          site2 = c("P2S2",NA,NA),
-                                          site3 = c("P4S2",NA,NA),
-                                          site4 = c("P10S1b", "P10S3b", NA),
-                                          site5 = c("P10S3",NA,NA),
-                                          site6 = c("P10S4","P10S6", NA),
-                                          site7 = c("P10S4b",NA, NA),
-                                          site8 = c("P10S7b", "P10S8b", "P10S9b"),
-                                          site9 = c("P10S10b", "P10S11b", "P10S12b"),
-                                          site10 = c("P10S13b","P10S14b", NA),
-                                          site11 = c("P10S16", "P10S18", NA),
-                                          site12 = c("P10S22", "P10S23", NA),
-                                          site13 = c("P10S26", NA, NA),
-                                          site14 = c("P10S31", NA, NA),
-                                          site15 = c("P11S10", "P11S11", "P11S12"),
-                                          site16 = c("P12S4", "P12S5", "P12S6"),
-                                          site17 = c("P13S1", "P13S2", "P13S3"),
-                                          site18 = c("P14S1", NA, NA),
-                                          site19 = c("P14S7", "P14S8", "P14S9"),
-                                          site20 = c("P14S12", "P14S13", NA),
-                                          site21 = c("P14S16", "P14S17", "P14S18"),
-                                          site22 = c("P14S22", "P14S23", "P14S24"),
-                                          site23 = c("P14S28", "P14S29", "P14S30"),
-                                          site24 = c("P14S37", "P14S38", "P14S39"),
-                                          site25 = c("P14S40", "P14S42", NA),
-                                          site26 = c("P14S46", "P14S47", "P14S48"),
-                                          site27 = c("P15S1", "P15S2", "P15S3"),
-                                          site28 = c("P16S4", "P16S5", "P16S6"),
-                                          site29 = c("P17S4", "P17S6", NA),
-                                          site30 = c("P18S4", "P18S6", NA),
-                                          site31 = c("P19S4", "P19S5", NA),
-                                          site32 = c("P19S10", "P19S11", NA),
-                                          site33 = c("P19S16", "P19S17", "P19S18"),
-                                          site34 = c("P19S22", "P19S23", "P19S24"),
-                                          site35 = c("P19S25", "P19S26", "P19S27"),
-                                          site36 = c("P19S34", "P19S35", "P19S36"),
-                                          site37 = c("P19S40", "P19S41", "P19S42"),
-                                          site38 = c("P19S43", "P19S44", "P19S45"),
-                                          site39 = c("P19S52", "P19S53", "P19S54"),
-                                          site40 = c("P20S1", "P20S2", "P20S3"),
-                                          site41 = c("P22S1", "P22S2", "P22S3"),
-                                          site42 = c("P23S4", NA, NA),
-                                          site43 = c("P23S5", NA, NA),
-                                          site44 = c("P24S1", "P24S2", "P24S3"),
-                                          site45 = c("P25S1", "P25S2", "P25S3"),
-                                          site46 = c("P26S1", "P26S2", "P26S3"),
-                                          site47 = c("P27S1", "P27S2", "P27S3"),
-                                          site48 = c("P27S7", "P27S8", "P27S9"),
-                                          site49 = c("P27S13", "P27S14", "P27S15"),
-                                          site50 = c("P27S22", "P27S23", "P27S24"),
-                                          site51 = c("P27S26", "P27S28", NA),
-                                          site52 = c("P27S30", "P27S31", "P27S32"),
-                                          site53 = c("P27S33", "P27S34", "P27S35"),
-                                          site54 = c("P27S36", "P27S37", "P27S38"),
-                                          site55 = c("P27S49", "P27S51", NA),
-                                          site56 = c("P28S1", "P28S2", "P28S3"),
-                                          site57 = c("P32S1", "P32S2", "P32S3"),
-                                          site58 = c("P34S1", "P34S2", "P34S3"),
-                                          site59 = c("P36S1", "P36S2", "P36S3"),
-                                          site60 = c("P36S7", "P36S8", "P36S9"),
-                                          site61 = c("P36S16", "P36S17", "P36S18"),
-                                          site62 = c("P36S19", "P36S20", "P36S21"),
-                                          site63 = c("P36S25", "P36S26", "P36S27"),
-                                          site64 = c("P36S34", "P36S35", "P36S36"),
-                                          site65 = c("P36S40", "P36S41", NA))
-         
-     
-     
-     ## LEMNA triplets
-     lemna_same_location = data.frame(site2 = c("P5S1", NA, NA),
-                                      site3 = c("P6S1", "P6S3",NA),
-                                      site4 = c("P7S1", "P7S2", "P7S3"),
-                                      site5 = c("P10S1", "P10S2", NA),
-                                      site6 = c("P10S2b", NA, NA),
-                                      site7 = c("P10S5", NA, NA),
-                                      site8 = c("P10S5b", "P10S6b", NA),
-                                      site9 = c("P10S7", "P10S8", "P10S9"),
-                                      site10 = c("P10S10", "P10S11", "P10S12"),
-                                      site11 = c("P10S13", "P10S14", NA),
-                                      site12 = c("P10S15b", NA, NA),
-                                      site13 = c("P10S19", "P10S20", "P10S21"),
-                                      site14 = c("P10S28", "P10S30",NA),
-                                      site15 = c("P11S7", "P11S8", "P11S9"),
-                                      site16 = c("P14S10", "P14S11", NA),
-                                      site17 = c("P14S15", NA, NA),
-                                      site18 = c("P14S19", "P14S20", "P14S21"),
-                                      site19 = c("P14S25", "P14S26", "P14S27"),
-                                      site20 = c("P14S31", "P14S32", NA),
-                                      site21 = c("P14S34", "P14S35", "P14S36"),
-                                      site22 = c("P14S43", "P14S44", "P14S45"),
-                                      site23 = c("P14S49", "P14S50", NA),
-                                      site24 = c("P14S55", "P14S56", "P14S57"),
-                                      site25 = c("P16S2", "P16S3", NA),
-                                      site26 = c("P17S1", "P17S2", "P17S3"),
-                                      site27 = c("P18S2", NA, NA),
-                                      site28 = c("P19S1", "P19S2", "P19S3"),
-                                      site29 = c("P19S7", "P19S8", "P19S9"),
-                                      site30 = c("P19S13", "P19A14", "P19S15"),
-                                      site31 = c("P19S19", "P19S20", "P19S21"),
-                                      site32 = c("P19S28", "P19S29", "P19S30"),
-                                      site33 = c("P19S31", "P19S32", "P19S33"),
-                                      site34 = c("P19S37", "P19S38", "P19S39"),
-                                      site35 = c("P19S46", "P19S47", "P19S48"),
-                                      site36 = c("P19S49", "P19S50", "P19S51"),
-                                      site37 = c("P21S1","P21S2", NA),
-                                      site38 = c("P22S4", "P22S6",NA),
-                                      site39 = c("P23S3", NA, NA),
-                                      site40 = c("P27S4", "P27S5", NA),
-                                      site41 = c("P27S10", "P27S11", "P27S12"),
-                                      site42 = c("P27S16", "P27S17", "P27S18"),
-                                      site43 = c("P27S19", "P27S20", "P27S21"),
-                                      site44 = c("P27S25", "P27S27", NA),
-                                      site45 = c("P27S39", "P27S40", "P27S41"),
-                                      site46 = c("P27S42", NA, NA),
-                                      site47 = c("P27S43", "P27S44", "P27S45"),
-                                      site48 = c("P27S46", "P27S47", "P27S48"),
-                                      site49 = c("P27S52", NA, NA),
-                                      site50 = c("P28S4", "P28S5", "P28S6"),
-                                      site51 = c("P30S1", "P30S2", "P30S3"),
-                                      site52 = c("P31S1", "P31S2", "P31S3"),
-                                      site53 = c("P32S4", "P32S5", "P32S6"),
-                                      site54 = c("P33S1", "P33S2", "P33S3"),
-                                      site55 = c("P34S5", "P34S6", NA),
-                                      site56 = c("P35S2", "P35S3", NA),
-                                      site57 = c("P36S4", "P36S5", "P36S6"),
-                                      site58 = c("P36S10", "P36S11", "P36S12"),
-                                      site59 = c("P36S13", "P36S14", "P36S15"),
-                                      site60 = c("P36S22", "P36S23", "P36S24"),
-                                      site61 = c("P36S28", "P36S29", "P36S30"),
-                                      site62 = c("P36S31", "P36S32", "P36S33"),
-                                      
-                                      site63 = c("P36S37", "P36S38", "P36S39")
-     )
-     
-     
-                          
-     ## identify sites with 2 and 3 plants 
-     landoltia_sites_with_two_or_more = as.vector(which(apply(apply(landoltia_same_location, 2, function(x) is.na(x)), 2, sum) != 2))
-     
-     ## remove singles
-     landoltia_same_location = landoltia_same_location[,c(landoltia_sites_with_two_or_more)]
-     
-     landoltia_saver = list()   
-     for (n in 1:ncol(landoltia_same_location)) {
-       
-       runner_matrix = landoltia_hamdist[which(colnames(landoltia_hamdist) %in% landoltia_same_location[,n]),which(colnames(landoltia_hamdist) %in% landoltia_same_location[,n]), drop=FALSE]
-       landoltia_saver[[n]] = runner_matrix[lower.tri(runner_matrix, diag=FALSE)]
-       
-     }    
-    
-     ## compute histograms with equal bins
-     breaks = pretty(range(c(0,max(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]))), n = 30)
-     landoltia_local_samples = hist(unlist(landoltia_saver), breaks = breaks, plot = FALSE)
-     landoltia_global_samples = hist(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)], breaks = breaks, plot = FALSE)
-     
-     # assemble triplet plot
-     plot(landoltia_local_samples,
-          col = scales::alpha("red", 0.5),
-          xlab = "Genetic distance",
-          ylab = "", main="",
-          ylim = c(0, max(landoltia_local_samples$counts)),
-          xlim = c(0, max(landoltia_hamdist+0.02)))
-     axis(side=2, col.axis="red")
-     
-     ## add second histogram
-     par(new = TRUE)
-     plot(landoltia_global_samples,
-          col = scales::alpha("blue", 0.5),
-          axes = FALSE, xlab = "", ylab = "", main = "",
-          ylim = c(0, max(landoltia_global_samples$counts)),
-          xlim = c(0, max(landoltia_hamdist+0.02)))
-     axis(side = 4, col.axis="blue")
-    
-     ## Lemna triplets
-     lemna_same_location = data.frame(site2 = c("P5S1", NA, NA),
-                                      site3 = c("P6S1", "P6S3",NA),
-                                      site4 = c("P7S1", "P7S2", "P7S3"),
-                                      site5 = c("P10S1", "P10S2", NA),
-                                      site6 = c("P10S2b", NA, NA),
-                                      site7 = c("P10S5", NA, NA),
-                                      site8 = c("P10S5b", "P10S6b", NA),
-                                      site9 = c("P10S7", "P10S8", "P10S9"),
-                                      site10 = c("P10S10", "P10S11", "P10S12"),
-                                      site11 = c("P10S13", "P10S14", NA),
-                                      site12 = c("P10S15b", NA, NA),
-                                      site13 = c("P10S19", "P10S20", "P10S21"),
-                                      site14 = c("P10S28", "P10S30",NA),
-                                      site15 = c("P11S7", "P11S8", "P11S9"),
-                                      site16 = c("P14S10", "P14S11", NA),
-                                      site17 = c("P14S15", NA, NA),
-                                      site18 = c("P14S19", "P14S20", "P14S21"),
-                                      site19 = c("P14S25", "P14S26", "P14S27"),
-                                      site20 = c("P14S31", "P14S32", NA),
-                                      site21 = c("P14S34", "P14S35", "P14S36"),
-                                      site22 = c("P14S43", "P14S44", "P14S45"),
-                                      site23 = c("P14S49", "P14S50", NA),
-                                      site24 = c("P14S55", "P14S56", "P14S57"),
-                                      site25 = c("P16S2", "P16S3", NA),
-                                      site26 = c("P17S1", "P17S2", "P17S3"),
-                                      site27 = c("P18S2", NA, NA),
-                                      site28 = c("P19S1", "P19S2", "P19S3"),
-                                      site29 = c("P19S7", "P19S8", "P19S9"),
-                                      site30 = c("P19S13", "P19A14", "P19S15"),
-                                      site31 = c("P19S19", "P19S20", "P19S21"),
-                                      site32 = c("P19S28", "P19S29", "P19S30"),
-                                      site33 = c("P19S31", "P19S32", "P19S33"),
-                                      site34 = c("P19S37", "P19S38", "P19S39"),
-                                      site35 = c("P19S46", "P19S47", "P19S48"),
-                                      site36 = c("P19S49", "P19S50", "P19S51"),
-                                      site37 = c("P21S1","P21S2", NA),
-                                      site38 = c("P22S4", "P22S6",NA),
-                                      site39 = c("P23S3", NA, NA),
-                                      site40 = c("P27S4", "P27S5", NA),
-                                      site41 = c("P27S10", "P27S11", "P27S12"),
-                                      site42 = c("P27S16", "P27S17", "P27S18"),
-                                      site43 = c("P27S19", "P27S20", "P27S21"),
-                                      site44 = c("P27S25", "P27S27", NA),
-                                      site45 = c("P27S39", "P27S40", "P27S41"),
-                                      site46 = c("P27S42", NA, NA),
-                                      site47 = c("P27S43", "P27S44", "P27S45"),
-                                      site48 = c("P27S46", "P27S47", "P27S48"),
-                                      site49 = c("P27S52", NA, NA),
-                                      site50 = c("P28S4", "P28S5", "P28S6"),
-                                      site51 = c("P30S1", "P30S2", "P30S3"),
-                                      site52 = c("P31S1", "P31S2", "P31S3"),
-                                      site53 = c("P32S4", "P32S5", "P32S6"),
-                                      site54 = c("P33S1", "P33S2", "P33S3"),
-                                      site55 = c("P34S5", "P34S6", NA),
-                                      site56 = c("P35S2", "P35S3", NA),
-                                      site57 = c("P36S4", "P36S5", "P36S6"),
-                                      site58 = c("P36S10", "P36S11", "P36S12"),
-                                      site59 = c("P36S13", "P36S14", "P36S15"),
-                                      site60 = c("P36S22", "P36S23", "P36S24"),
-                                      site61 = c("P36S28", "P36S29", "P36S30"),
-                                      site62 = c("P36S31", "P36S32", "P36S33"),
-                                      site63 = c("P36S37", "P36S38", "P36S39")
-     )
-            
-     ## identify sites with 2 and 3 plants 
-     lemna_sites_with_two_or_more = as.vector(which(apply(apply(lemna_same_location, 2, function(x) is.na(x)), 2, sum) != 2))
-     
-     ## remove singles
-     lemna_same_location = lemna_same_location[,c(lemna_sites_with_two_or_more)]
-     
-     lemna_saver = list()   
-     for (n in 1:ncol(lemna_same_location)) {
-       
-       runner_matrix = lemna_hamdist[which(colnames(lemna_hamdist) %in% lemna_same_location[,n]),which(colnames(lemna_hamdist) %in% lemna_same_location[,n]), drop=FALSE]
-       lemna_saver[[n]] = runner_matrix[lower.tri(runner_matrix, diag=FALSE)]
-       
-     }    
-     
-     ## compute histograms with equal bins
-     breaks = pretty(range(c(0,max(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]))), n = 30)
-     lemna_local_samples = hist(unlist(lemna_saver), breaks = breaks, plot = FALSE)
-     lemna_global_samples = hist(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)], breaks = breaks, plot = FALSE)
-     
-     # assemble triplet plot
-     plot(lemna_local_samples,
-          col = scales::alpha("red", 0.5),
-          xlab = "Genetic distance",
-          ylab = "", main="",
-          ylim = c(0, max(lemna_local_samples$counts)),
-          xlim = c(0, max(lemna_hamdist+0.02)))
-     axis(side=2, col.axis="red")
-     
-     ## add second histogram
-     par(new = TRUE)
-     plot(lemna_global_samples,
-          col = scales::alpha("blue", 0.5),
-          axes = FALSE, xlab = "", ylab = "", main = "",
-          ylim = c(0, max(lemna_global_samples$counts)),
-          xlim = c(0, max(lemna_hamdist+0.02)))
-     axis(side = 4, col.axis="blue")
-     
-     
-     ## landoltia population structure with LEA ####
-     
-     ## transform data
-     landoltia_final_geno = vcf2geno("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/landoltia_final.vcf")
-     
-     ## run analysis
-     landoltia_project = NULL
-     landoltia_project = snmf(landoltia_final_geno,
-                              K = 1:10,
-                              entropy = TRUE,
-                              repetitions = 20,
-                              project = "new")
-                   
-     
-     ## plot entropy to identify best number of clusters
-     plot(landoltia_project, main="Landoltia")
-     
-     ## STRUCTURE plot
-     best = which.min(cross.entropy(landoltia_project, K = 9))
-     my.colors <- rainbow(9)
-     barchart(landoltia_project, K = 9, run = best,
-              border = NA, space = 0,
-              col = my.colors,
-              xlab = "Individuals",
-              ylab = "Ancestry proportions",
-              main = "Ancestry matrix") -> bp
-     axis(1, at = 1:length(bp$order),
-          labels = bp$order, las=1,
-          cex.axis = .4)
-     
-     
-     ## lemna population structure with LEA ####
-     
-     ## transform data
-     lemna_final_geno = vcf2geno("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/lemna_final.vcf")
-     
-     ## run analysis
-     lemna_project = NULL
-     lemna_project = snmf(lemna_final_geno,
-                    K = 1:10,
-                    entropy = TRUE,
-                    repetitions = 10,
-                    project = "new")
-     
-     ## plot entropy to identify best number of clusters
-     plot(lemna_project, main="Lemna")
-     
-     ## STRUCTURE plot
-     best = which.min(cross.entropy(lemna_project, K = 7))
-     my.colors <- brewer.pal(7, "Set3")
-     barchart(lemna_project, K = 7, run = best,
-              border = NA, space = 0,
-              col = my.colors,
-              xlab = "Individuals",
-              ylab = "Ancestry proportions",
-              main = "Ancestry matrix") -> bp
-     axis(1, at = 1:length(bp$order),
-          labels = bp$order, las=1,
-          cex.axis = .4)
-     
-     ## rarefaction curves ####
-     
-     landoltia_pond10 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P10")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P10"))]      
-     landoltia_pond14 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P14")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P14"))]      
-     landoltia_pond19 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P19")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P19"))]      
-     landoltia_pond27 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P27")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P27"))]      
-     landoltia_pond36 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P36")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P36"))]      
-     
-     landoltia_rarecurve_all = hamdist_to_rarecurve(landoltia_hamdist)
-     landoltia_rarecurve_P10 = hamdist_to_rarecurve(landoltia_pond10)
-     landoltia_rarecurve_P14 = hamdist_to_rarecurve(landoltia_pond14)
-     landoltia_rarecurve_P19 = hamdist_to_rarecurve(landoltia_pond19)
-     landoltia_rarecurve_P27 = hamdist_to_rarecurve(landoltia_pond27)
-     landoltia_rarecurve_P36 = hamdist_to_rarecurve(landoltia_pond36)
-     
-     landoltia_rareplot_all = rarecurve(landoltia_rarecurve_all)
-     landoltia_rareplot_P10 = rarecurve(landoltia_rarecurve_P10)
-     landoltia_rareplot_P14 = rarecurve(landoltia_rarecurve_P14)
-     landoltia_rareplot_P19 = rarecurve(landoltia_rarecurve_P19)
-     landoltia_rareplot_P27 = rarecurve(landoltia_rarecurve_P27)
-     landoltia_rareplot_P36 = rarecurve(landoltia_rarecurve_P36)
-     
-     plot(1:length(landoltia_rareplot_all[[1]]),landoltia_rareplot_all[[1]], type="l")
-     lines(1:length(landoltia_rareplot_P10[[1]]),landoltia_rareplot_P10[[1]])
-     lines(1:length(landoltia_rareplot_P14[[1]]),landoltia_rareplot_P14[[1]])
-     lines(1:length(landoltia_rareplot_P19[[1]]),landoltia_rareplot_P19[[1]])
-     lines(1:length(landoltia_rareplot_P27[[1]]),landoltia_rareplot_P27[[1]])
-     lines(1:length(landoltia_rareplot_P36[[1]]),landoltia_rareplot_P36[[1]])
-     
-     
-     lemna_pond10 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P10")),c(which(substr(colnames(lemna_hamdist),1,3) == "P10"))]      
-     lemna_pond14 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P14")),c(which(substr(colnames(lemna_hamdist),1,3) == "P14"))]      
-     lemna_pond19 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P19")),c(which(substr(colnames(lemna_hamdist),1,3) == "P19"))]      
-     lemna_pond27 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P27")),c(which(substr(colnames(lemna_hamdist),1,3) == "P27"))]      
-     lemna_pond36 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P36")),c(which(substr(colnames(lemna_hamdist),1,3) == "P36"))]      
-    
-     lemna_rarecurve_all = hamdist_to_rarecurve(lemna_hamdist)
-     lemna_rarecurve_P10 = hamdist_to_rarecurve(lemna_pond10)
-     lemna_rarecurve_P14 = hamdist_to_rarecurve(lemna_pond14)
-     lemna_rarecurve_P19 = hamdist_to_rarecurve(lemna_pond19)
-     lemna_rarecurve_P27 = hamdist_to_rarecurve(lemna_pond27)
-     lemna_rarecurve_P36 = hamdist_to_rarecurve(lemna_pond36)
-     
-     lemna_rareplot_all = rarecurve(lemna_rarecurve_all)
-     lemna_rareplot_P10 = rarecurve(lemna_rarecurve_P10)
-     lemna_rareplot_P14 = rarecurve(lemna_rarecurve_P14)
-     lemna_rareplot_P19 = rarecurve(lemna_rarecurve_P19)
-     lemna_rareplot_P27 = rarecurve(lemna_rarecurve_P27)
-     lemna_rareplot_P36 = rarecurve(lemna_rarecurve_P36)
-     
-     plot(1:length(lemna_rareplot_all[[1]]),lemna_rareplot_all[[1]], type="l")
-     plot(1:length(lemna_rareplot_P10[[1]]),lemna_rarecurve_all_P10[[1]], type="l", ylim=c(0,5), xlim=c(0,22))
-     lines(1:length(lemna_rareplot_P10[[1]]),lemna_rareplot_P10[[1]])
-     lines(1:length(lemna_rareplot_P14[[1]]),lemna_rareplot_P14[[1]])
-     lines(1:length(lemna_rareplot_P19[[1]]),lemna_rareplot_P19[[1]])
-     lines(1:length(lemna_rareplot_P27[[1]]),lemna_rareplot_P27[[1]])
-     lines(1:length(lemna_rareplot_P36[[1]]),lemna_rareplot_P36[[1]])
-     
-     
-     
-     sd
      ## mantel test and the like ####
      
      library(ecodist)
@@ -2300,7 +1792,7 @@
      close.screen(2)
      close.screen(all.screens=TRUE)
      
-     
+      
      ## lemna clone heatmap gendist ####
      
      ## hardcode meaningful order of samples
@@ -3172,4 +2664,444 @@
           labels = rownames(glpca_result$scores), pos = 3, cex = 0.4, col="gray50")
      
      
+     
+     ## FIGURE X: triplet sampling ####
+     
+     par(mfrow=c(1,2))
+     
+     ## LANDOLTIA triplets    
+     landoltia_same_location = data.frame(site1 = c("P1S2",NA,NA),
+                                          site2 = c("P2S2",NA,NA),
+                                          site3 = c("P4S2",NA,NA),
+                                          site4 = c("P10S1b", "P10S3b", NA),
+                                          site5 = c("P10S3",NA,NA),
+                                          site6 = c("P10S4","P10S6", NA),
+                                          site7 = c("P10S4b",NA, NA),
+                                          site8 = c("P10S7b", "P10S8b", "P10S9b"),
+                                          site9 = c("P10S10b", "P10S11b", "P10S12b"),
+                                          site10 = c("P10S13b","P10S14b", NA),
+                                          site11 = c("P10S16", "P10S18", NA),
+                                          site12 = c("P10S22", "P10S23", NA),
+                                          site13 = c("P10S26", NA, NA),
+                                          site14 = c("P10S31", NA, NA),
+                                          site15 = c("P11S10", "P11S11", "P11S12"),
+                                          site16 = c("P12S4", "P12S5", "P12S6"),
+                                          site17 = c("P13S1", "P13S2", "P13S3"),
+                                          site18 = c("P14S1", NA, NA),
+                                          site19 = c("P14S7", "P14S8", "P14S9"),
+                                          site20 = c("P14S12", "P14S13", NA),
+                                          site21 = c("P14S16", "P14S17", "P14S18"),
+                                          site22 = c("P14S22", "P14S23", "P14S24"),
+                                          site23 = c("P14S28", "P14S29", "P14S30"),
+                                          site24 = c("P14S37", "P14S38", "P14S39"),
+                                          site25 = c("P14S40", "P14S42", NA),
+                                          site26 = c("P14S46", "P14S47", "P14S48"),
+                                          site27 = c("P15S1", "P15S2", "P15S3"),
+                                          site28 = c("P16S4", "P16S5", "P16S6"),
+                                          site29 = c("P17S4", "P17S6", NA),
+                                          site30 = c("P18S4", "P18S6", NA),
+                                          site31 = c("P19S4", "P19S5", NA),
+                                          site32 = c("P19S10", "P19S11", NA),
+                                          site33 = c("P19S16", "P19S17", "P19S18"),
+                                          site34 = c("P19S22", "P19S23", "P19S24"),
+                                          site35 = c("P19S25", "P19S26", "P19S27"),
+                                          site36 = c("P19S34", "P19S35", "P19S36"),
+                                          site37 = c("P19S40", "P19S41", "P19S42"),
+                                          site38 = c("P19S43", "P19S44", "P19S45"),
+                                          site39 = c("P19S52", "P19S53", "P19S54"),
+                                          site40 = c("P20S1", "P20S2", "P20S3"),
+                                          site41 = c("P22S1", "P22S2", "P22S3"),
+                                          site42 = c("P23S4", NA, NA),
+                                          site43 = c("P23S5", NA, NA),
+                                          site44 = c("P24S1", "P24S2", "P24S3"),
+                                          site45 = c("P25S1", "P25S2", "P25S3"),
+                                          site46 = c("P26S1", "P26S2", "P26S3"),
+                                          site47 = c("P27S1", "P27S2", "P27S3"),
+                                          site48 = c("P27S7", "P27S8", "P27S9"),
+                                          site49 = c("P27S13", "P27S14", "P27S15"),
+                                          site50 = c("P27S22", "P27S23", "P27S24"),
+                                          site51 = c("P27S26", "P27S28", NA),
+                                          site52 = c("P27S30", "P27S31", "P27S32"),
+                                          site53 = c("P27S33", "P27S34", "P27S35"),
+                                          site54 = c("P27S36", "P27S37", "P27S38"),
+                                          site55 = c("P27S49", "P27S51", NA),
+                                          site56 = c("P28S1", "P28S2", "P28S3"),
+                                          site57 = c("P32S1", "P32S2", "P32S3"),
+                                          site58 = c("P34S1", "P34S2", "P34S3"),
+                                          site59 = c("P36S1", "P36S2", "P36S3"),
+                                          site60 = c("P36S7", "P36S8", "P36S9"),
+                                          site61 = c("P36S16", "P36S17", "P36S18"),
+                                          site62 = c("P36S19", "P36S20", "P36S21"),
+                                          site63 = c("P36S25", "P36S26", "P36S27"),
+                                          site64 = c("P36S34", "P36S35", "P36S36"),
+                                          site65 = c("P36S40", "P36S41", NA))
+     
+     
+     
+     ## LEMNA triplets
+     lemna_same_location = data.frame(site2 = c("P5S1", NA, NA),
+                                      site3 = c("P6S1", "P6S3",NA),
+                                      site4 = c("P7S1", "P7S2", "P7S3"),
+                                      site5 = c("P10S1", "P10S2", NA),
+                                      site6 = c("P10S2b", NA, NA),
+                                      site7 = c("P10S5", NA, NA),
+                                      site8 = c("P10S5b", "P10S6b", NA),
+                                      site9 = c("P10S7", "P10S8", "P10S9"),
+                                      site10 = c("P10S10", "P10S11", "P10S12"),
+                                      site11 = c("P10S13", "P10S14", NA),
+                                      site12 = c("P10S15b", NA, NA),
+                                      site13 = c("P10S19", "P10S20", "P10S21"),
+                                      site14 = c("P10S28", "P10S30",NA),
+                                      site15 = c("P11S7", "P11S8", "P11S9"),
+                                      site16 = c("P14S10", "P14S11", NA),
+                                      site17 = c("P14S15", NA, NA),
+                                      site18 = c("P14S19", "P14S20", "P14S21"),
+                                      site19 = c("P14S25", "P14S26", "P14S27"),
+                                      site20 = c("P14S31", "P14S32", NA),
+                                      site21 = c("P14S34", "P14S35", "P14S36"),
+                                      site22 = c("P14S43", "P14S44", "P14S45"),
+                                      site23 = c("P14S49", "P14S50", NA),
+                                      site24 = c("P14S55", "P14S56", "P14S57"),
+                                      site25 = c("P16S2", "P16S3", NA),
+                                      site26 = c("P17S1", "P17S2", "P17S3"),
+                                      site27 = c("P18S2", NA, NA),
+                                      site28 = c("P19S1", "P19S2", "P19S3"),
+                                      site29 = c("P19S7", "P19S8", "P19S9"),
+                                      site30 = c("P19S13", "P19A14", "P19S15"),
+                                      site31 = c("P19S19", "P19S20", "P19S21"),
+                                      site32 = c("P19S28", "P19S29", "P19S30"),
+                                      site33 = c("P19S31", "P19S32", "P19S33"),
+                                      site34 = c("P19S37", "P19S38", "P19S39"),
+                                      site35 = c("P19S46", "P19S47", "P19S48"),
+                                      site36 = c("P19S49", "P19S50", "P19S51"),
+                                      site37 = c("P21S1","P21S2", NA),
+                                      site38 = c("P22S4", "P22S6",NA),
+                                      site39 = c("P23S3", NA, NA),
+                                      site40 = c("P27S4", "P27S5", NA),
+                                      site41 = c("P27S10", "P27S11", "P27S12"),
+                                      site42 = c("P27S16", "P27S17", "P27S18"),
+                                      site43 = c("P27S19", "P27S20", "P27S21"),
+                                      site44 = c("P27S25", "P27S27", NA),
+                                      site45 = c("P27S39", "P27S40", "P27S41"),
+                                      site46 = c("P27S42", NA, NA),
+                                      site47 = c("P27S43", "P27S44", "P27S45"),
+                                      site48 = c("P27S46", "P27S47", "P27S48"),
+                                      site49 = c("P27S52", NA, NA),
+                                      site50 = c("P28S4", "P28S5", "P28S6"),
+                                      site51 = c("P30S1", "P30S2", "P30S3"),
+                                      site52 = c("P31S1", "P31S2", "P31S3"),
+                                      site53 = c("P32S4", "P32S5", "P32S6"),
+                                      site54 = c("P33S1", "P33S2", "P33S3"),
+                                      site55 = c("P34S5", "P34S6", NA),
+                                      site56 = c("P35S2", "P35S3", NA),
+                                      site57 = c("P36S4", "P36S5", "P36S6"),
+                                      site58 = c("P36S10", "P36S11", "P36S12"),
+                                      site59 = c("P36S13", "P36S14", "P36S15"),
+                                      site60 = c("P36S22", "P36S23", "P36S24"),
+                                      site61 = c("P36S28", "P36S29", "P36S30"),
+                                      site62 = c("P36S31", "P36S32", "P36S33"),
+                                      
+                                      site63 = c("P36S37", "P36S38", "P36S39")
+     )
+     
+     
+     
+     ## identify sites with 2 and 3 plants 
+     landoltia_sites_with_two_or_more = as.vector(which(apply(apply(landoltia_same_location, 2, function(x) is.na(x)), 2, sum) != 2))
+     
+     ## remove singles
+     landoltia_same_location = landoltia_same_location[,c(landoltia_sites_with_two_or_more)]
+     
+     landoltia_saver = list()   
+     for (n in 1:ncol(landoltia_same_location)) {
+       
+       runner_matrix = landoltia_hamdist[which(colnames(landoltia_hamdist) %in% landoltia_same_location[,n]),which(colnames(landoltia_hamdist) %in% landoltia_same_location[,n]), drop=FALSE]
+       landoltia_saver[[n]] = runner_matrix[lower.tri(runner_matrix, diag=FALSE)]
+       
+     }    
+     
+     ## compute histograms with equal bins
+     breaks = pretty(range(c(0,max(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]))), n = 30)
+     landoltia_local_samples = hist(unlist(landoltia_saver), breaks = breaks, plot = FALSE)
+     landoltia_global_samples = hist(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)], breaks = breaks, plot = FALSE)
+     
+     # assemble triplet plot
+     plot(landoltia_local_samples,
+          col = scales::alpha("red", 0.5),
+          xlab = "Genetic distance",
+          ylab = "", main="",
+          ylim = c(0, max(landoltia_local_samples$counts)),
+          xlim = c(0, max(landoltia_hamdist+0.02)))
+     axis(side=2, col.axis="red")
+     
+     ## add second histogram
+     par(new = TRUE)
+     plot(landoltia_global_samples,
+          col = scales::alpha("blue", 0.5),
+          axes = FALSE, xlab = "", ylab = "", main = "",
+          ylim = c(0, max(landoltia_global_samples$counts)),
+          xlim = c(0, max(landoltia_hamdist+0.02)))
+     axis(side = 4, col.axis="blue")
+     
+     ## Lemna triplets
+     lemna_same_location = data.frame(site2 = c("P5S1", NA, NA),
+                                      site3 = c("P6S1", "P6S3",NA),
+                                      site4 = c("P7S1", "P7S2", "P7S3"),
+                                      site5 = c("P10S1", "P10S2", NA),
+                                      site6 = c("P10S2b", NA, NA),
+                                      site7 = c("P10S5", NA, NA),
+                                      site8 = c("P10S5b", "P10S6b", NA),
+                                      site9 = c("P10S7", "P10S8", "P10S9"),
+                                      site10 = c("P10S10", "P10S11", "P10S12"),
+                                      site11 = c("P10S13", "P10S14", NA),
+                                      site12 = c("P10S15b", NA, NA),
+                                      site13 = c("P10S19", "P10S20", "P10S21"),
+                                      site14 = c("P10S28", "P10S30",NA),
+                                      site15 = c("P11S7", "P11S8", "P11S9"),
+                                      site16 = c("P14S10", "P14S11", NA),
+                                      site17 = c("P14S15", NA, NA),
+                                      site18 = c("P14S19", "P14S20", "P14S21"),
+                                      site19 = c("P14S25", "P14S26", "P14S27"),
+                                      site20 = c("P14S31", "P14S32", NA),
+                                      site21 = c("P14S34", "P14S35", "P14S36"),
+                                      site22 = c("P14S43", "P14S44", "P14S45"),
+                                      site23 = c("P14S49", "P14S50", NA),
+                                      site24 = c("P14S55", "P14S56", "P14S57"),
+                                      site25 = c("P16S2", "P16S3", NA),
+                                      site26 = c("P17S1", "P17S2", "P17S3"),
+                                      site27 = c("P18S2", NA, NA),
+                                      site28 = c("P19S1", "P19S2", "P19S3"),
+                                      site29 = c("P19S7", "P19S8", "P19S9"),
+                                      site30 = c("P19S13", "P19A14", "P19S15"),
+                                      site31 = c("P19S19", "P19S20", "P19S21"),
+                                      site32 = c("P19S28", "P19S29", "P19S30"),
+                                      site33 = c("P19S31", "P19S32", "P19S33"),
+                                      site34 = c("P19S37", "P19S38", "P19S39"),
+                                      site35 = c("P19S46", "P19S47", "P19S48"),
+                                      site36 = c("P19S49", "P19S50", "P19S51"),
+                                      site37 = c("P21S1","P21S2", NA),
+                                      site38 = c("P22S4", "P22S6",NA),
+                                      site39 = c("P23S3", NA, NA),
+                                      site40 = c("P27S4", "P27S5", NA),
+                                      site41 = c("P27S10", "P27S11", "P27S12"),
+                                      site42 = c("P27S16", "P27S17", "P27S18"),
+                                      site43 = c("P27S19", "P27S20", "P27S21"),
+                                      site44 = c("P27S25", "P27S27", NA),
+                                      site45 = c("P27S39", "P27S40", "P27S41"),
+                                      site46 = c("P27S42", NA, NA),
+                                      site47 = c("P27S43", "P27S44", "P27S45"),
+                                      site48 = c("P27S46", "P27S47", "P27S48"),
+                                      site49 = c("P27S52", NA, NA),
+                                      site50 = c("P28S4", "P28S5", "P28S6"),
+                                      site51 = c("P30S1", "P30S2", "P30S3"),
+                                      site52 = c("P31S1", "P31S2", "P31S3"),
+                                      site53 = c("P32S4", "P32S5", "P32S6"),
+                                      site54 = c("P33S1", "P33S2", "P33S3"),
+                                      site55 = c("P34S5", "P34S6", NA),
+                                      site56 = c("P35S2", "P35S3", NA),
+                                      site57 = c("P36S4", "P36S5", "P36S6"),
+                                      site58 = c("P36S10", "P36S11", "P36S12"),
+                                      site59 = c("P36S13", "P36S14", "P36S15"),
+                                      site60 = c("P36S22", "P36S23", "P36S24"),
+                                      site61 = c("P36S28", "P36S29", "P36S30"),
+                                      site62 = c("P36S31", "P36S32", "P36S33"),
+                                      site63 = c("P36S37", "P36S38", "P36S39")
+     )
+     
+     ## identify sites with 2 and 3 plants 
+     lemna_sites_with_two_or_more = as.vector(which(apply(apply(lemna_same_location, 2, function(x) is.na(x)), 2, sum) != 2))
+     
+     ## remove singles
+     lemna_same_location = lemna_same_location[,c(lemna_sites_with_two_or_more)]
+     
+     lemna_saver = list()   
+     for (n in 1:ncol(lemna_same_location)) {
+       
+       runner_matrix = lemna_hamdist[which(colnames(lemna_hamdist) %in% lemna_same_location[,n]),which(colnames(lemna_hamdist) %in% lemna_same_location[,n]), drop=FALSE]
+       lemna_saver[[n]] = runner_matrix[lower.tri(runner_matrix, diag=FALSE)]
+       
+     }    
+     
+     ## compute histograms with equal bins
+     breaks = pretty(range(c(0,max(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]))), n = 30)
+     lemna_local_samples = hist(unlist(lemna_saver), breaks = breaks, plot = FALSE)
+     lemna_global_samples = hist(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)], breaks = breaks, plot = FALSE)
+     
+     # assemble triplet plot
+     plot(lemna_local_samples,
+          col = scales::alpha("red", 0.5),
+          xlab = "Genetic distance",
+          ylab = "", main="",
+          ylim = c(0, max(lemna_local_samples$counts)),
+          xlim = c(0, max(lemna_hamdist+0.02)))
+     axis(side=2, col.axis="red")
+     
+     ## add second histogram
+     par(new = TRUE)
+     plot(lemna_global_samples,
+          col = scales::alpha("blue", 0.5),
+          axes = FALSE, xlab = "", ylab = "", main = "",
+          ylim = c(0, max(lemna_global_samples$counts)),
+          xlim = c(0, max(lemna_hamdist+0.02)))
+     axis(side = 4, col.axis="blue")
+     
+     
+     
+     ## Figure 4: Trees ####
+     
+     ## compute trees  
+     landoltia_tree = bionj(landoltia_hamdist)
+     landoltia_tree$edge.length[landoltia_tree$edge.length < 0] <- 0
+     landoltia_chronotree = chronos(landoltia_tree,control = chronos.control(iter.max = 1000), model="relaxed")
+     landoltia_chronotree$tip.label = substr(landoltia_chronotree$tip.label,1,3)
+     
+     lemna_tree = bionj(lemna_hamdist)
+     lemna_tree$edge.length[lemna_tree$edge.length < 0] <- 0
+     lemna_chronotree = chronos(lemna_tree,control = chronos.control(iter.max = 1000), model="relaxed")
+     lemna_chronotree$tip.label = substr(lemna_chronotree$tip.label,1,3)
+     
+     ## plot trees
+     
+     par(mfrow=c(1,2))
+     par(mar=c(0,0,0,0))
+     plot.phylo(landoltia_chronotree, cex=0.6, type = "fan", tip.color=ifelse(grepl("P10", landoltia_chronotree$tip.label), "red",
+                                                                              ifelse(grepl("P14", landoltia_chronotree$tip.label), "blue", 
+                                                                                     ifelse(grepl("P19", landoltia_chronotree$tip.label), "darkgreen",
+                                                                                            ifelse(grepl("P27", landoltia_chronotree$tip.label), "purple",
+                                                                                                   ifelse(grepl("P36", landoltia_chronotree$tip.label), "orange", "black")))))
+     )
+     par(mar=c(0,0,0,0))
+     plot.phylo(lemna_chronotree, cex=0.6, type = "fan", tip.color=ifelse(grepl("P10", lemna_chronotree$tip.label), "red",
+                                                                          ifelse(grepl("P14", lemna_chronotree$tip.label), "blue", 
+                                                                                 ifelse(grepl("P19", lemna_chronotree$tip.label), "darkgreen",
+                                                                                        ifelse(grepl("P27", lemna_chronotree$tip.label), "purple",
+                                                                                               ifelse(grepl("P36", lemna_chronotree$tip.label), "orange", "black")))))
+                
+     ) 
+     
+     
+     
+     
+     ## landoltia population structure with LEA ####
+     
+     ## transform data
+     landoltia_final_geno = vcf2geno("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/landoltia_final.vcf")
+     
+     ## run analysis
+     landoltia_project = NULL
+     landoltia_project = snmf(landoltia_final_geno,
+                              K = 1:10,
+                              entropy = TRUE,
+                              repetitions = 20,
+                              project = "new")
+     
+     
+     ## plot entropy to identify best number of clusters
+     plot(landoltia_project, main="Landoltia")
+     
+     ## STRUCTURE plot
+     best = which.min(cross.entropy(landoltia_project, K = 9))
+     my.colors <- rainbow(9)
+     barchart(landoltia_project, K = 9, run = best,
+              border = NA, space = 0,
+              col = my.colors,
+              xlab = "Individuals",
+              ylab = "Ancestry proportions",
+              main = "Ancestry matrix") -> bp
+     axis(1, at = 1:length(bp$order),
+          labels = bp$order, las=1,
+          cex.axis = .4)
+     
+     
+     ## lemna population structure with LEA ####
+     
+     ## transform data
+     lemna_final_geno = vcf2geno("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/lemna_final.vcf")
+     
+     ## run analysis
+     lemna_project = NULL
+     lemna_project = snmf(lemna_final_geno,
+                          K = 1:10,
+                          entropy = TRUE,
+                          repetitions = 10,
+                          project = "new")
+     
+     ## plot entropy to identify best number of clusters
+     plot(lemna_project, main="Lemna")
+     
+     ## STRUCTURE plot
+     best = which.min(cross.entropy(lemna_project, K = 7))
+     my.colors <- brewer.pal(7, "Set3")
+     barchart(lemna_project, K = 7, run = best,
+              border = NA, space = 0,
+              col = my.colors,
+              xlab = "Individuals",
+              ylab = "Ancestry proportions",
+              main = "Ancestry matrix") -> bp
+     axis(1, at = 1:length(bp$order),
+          labels = bp$order, las=1,
+          cex.axis = .4)
+     
+     
+     ## rarefaction curves ####
+     
+     landoltia_pond10 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P10")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P10"))]      
+     landoltia_pond14 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P14")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P14"))]      
+     landoltia_pond19 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P19")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P19"))]      
+     landoltia_pond27 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P27")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P27"))]      
+     landoltia_pond36 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P36")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P36"))]      
+     
+     landoltia_rarecurve_all = hamdist_to_rarecurve(landoltia_hamdist)
+     landoltia_rarecurve_P10 = hamdist_to_rarecurve(landoltia_pond10)
+     landoltia_rarecurve_P14 = hamdist_to_rarecurve(landoltia_pond14)
+     landoltia_rarecurve_P19 = hamdist_to_rarecurve(landoltia_pond19)
+     landoltia_rarecurve_P27 = hamdist_to_rarecurve(landoltia_pond27)
+     landoltia_rarecurve_P36 = hamdist_to_rarecurve(landoltia_pond36)
+     
+     landoltia_rareplot_all = rarecurve(landoltia_rarecurve_all)
+     landoltia_rareplot_P10 = rarecurve(landoltia_rarecurve_P10)
+     landoltia_rareplot_P14 = rarecurve(landoltia_rarecurve_P14)
+     landoltia_rareplot_P19 = rarecurve(landoltia_rarecurve_P19)
+     landoltia_rareplot_P27 = rarecurve(landoltia_rarecurve_P27)
+     landoltia_rareplot_P36 = rarecurve(landoltia_rarecurve_P36)
+     
+     plot(1:length(landoltia_rareplot_all[[1]]),landoltia_rareplot_all[[1]], type="l")
+     lines(1:length(landoltia_rareplot_P10[[1]]),landoltia_rareplot_P10[[1]])
+     lines(1:length(landoltia_rareplot_P14[[1]]),landoltia_rareplot_P14[[1]])
+     lines(1:length(landoltia_rareplot_P19[[1]]),landoltia_rareplot_P19[[1]])
+     lines(1:length(landoltia_rareplot_P27[[1]]),landoltia_rareplot_P27[[1]])
+     lines(1:length(landoltia_rareplot_P36[[1]]),landoltia_rareplot_P36[[1]])
+     
+     
+     lemna_pond10 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P10")),c(which(substr(colnames(lemna_hamdist),1,3) == "P10"))]      
+     lemna_pond14 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P14")),c(which(substr(colnames(lemna_hamdist),1,3) == "P14"))]      
+     lemna_pond19 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P19")),c(which(substr(colnames(lemna_hamdist),1,3) == "P19"))]      
+     lemna_pond27 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P27")),c(which(substr(colnames(lemna_hamdist),1,3) == "P27"))]      
+     lemna_pond36 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P36")),c(which(substr(colnames(lemna_hamdist),1,3) == "P36"))]      
+     
+     lemna_rarecurve_all = hamdist_to_rarecurve(lemna_hamdist)
+     lemna_rarecurve_P10 = hamdist_to_rarecurve(lemna_pond10)
+     lemna_rarecurve_P14 = hamdist_to_rarecurve(lemna_pond14)
+     lemna_rarecurve_P19 = hamdist_to_rarecurve(lemna_pond19)
+     lemna_rarecurve_P27 = hamdist_to_rarecurve(lemna_pond27)
+     lemna_rarecurve_P36 = hamdist_to_rarecurve(lemna_pond36)
+     
+     lemna_rareplot_all = rarecurve(lemna_rarecurve_all)
+     lemna_rareplot_P10 = rarecurve(lemna_rarecurve_P10)
+     lemna_rareplot_P14 = rarecurve(lemna_rarecurve_P14)
+     lemna_rareplot_P19 = rarecurve(lemna_rarecurve_P19)
+     lemna_rareplot_P27 = rarecurve(lemna_rarecurve_P27)
+     lemna_rareplot_P36 = rarecurve(lemna_rarecurve_P36)
+     
+     plot(1:length(lemna_rareplot_all[[1]]),lemna_rareplot_all[[1]], type="l")
+     plot(1:length(lemna_rareplot_P10[[1]]),lemna_rarecurve_all_P10[[1]], type="l", ylim=c(0,5), xlim=c(0,22))
+     lines(1:length(lemna_rareplot_P10[[1]]),lemna_rareplot_P10[[1]])
+     lines(1:length(lemna_rareplot_P14[[1]]),lemna_rareplot_P14[[1]])
+     lines(1:length(lemna_rareplot_P19[[1]]),lemna_rareplot_P19[[1]])
+     lines(1:length(lemna_rareplot_P27[[1]]),lemna_rareplot_P27[[1]])
+     lines(1:length(lemna_rareplot_P36[[1]]),lemna_rareplot_P36[[1]])
+     
+     
+     
+     sd
      
