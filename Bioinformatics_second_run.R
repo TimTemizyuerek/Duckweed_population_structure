@@ -141,14 +141,43 @@
      landoltia_postcvftools_qlty_ab_maxdp_smpl06 = min_mac(landoltia_postcvftools_qlty_ab_maxdp_smpl06, min.mac = 1)
      lemna_postcvftools_qlty_ab_maxdp_smpl06 = min_mac(lemna_postcvftools_qlty_ab_maxdp_smpl06, min.mac = 1)
       
+     ## remove linked loci in the same stack
+     landoltia_postcvftools_qlty_ab_maxdp_smpl06_thin = distance_thin(landoltia_postcvftools_qlty_ab_maxdp_smpl06, min.distance = 400)
+     lemna_postcvftools_qlty_ab_maxdp_smpl06_thin = distance_thin(lemna_postcvftools_qlty_ab_maxdp_smpl06, min.distance = 400)
+     
      ## apply more stringent missing SNP filter
-     landoltia_final = missing_by_snp(landoltia_postcvftools_qlty_ab_maxdp_smpl06, cutoff = .95)
-     lemna_final = missing_by_snp(lemna_postcvftools_qlty_ab_maxdp_smpl06, cutoff = .95)
+     landoltia_final = missing_by_snp(landoltia_postcvftools_qlty_ab_maxdp_smpl06_thin, cutoff = .95)
+     lemna_final = missing_by_snp(lemna_postcvftools_qlty_ab_maxdp_smpl06_thin, cutoff = .95)
      
-     ## export data in vcf format for spider to make structure files
-     # write.vcf(landoltia_final, "landoltia_final.vcf.gz")
-     # write.vcf(lemna_final, "lemna_final.vcf.gz")
-     
+     # ## remove clones for structure analysis
+     # 
+     # ## identify clones to keep
+     # landoltia_clones_to_remove = as.vector(na.omit(unlist(landoltia_clone_df[2:nrow(landoltia_clone_df),], use.names=FALSE)))
+     # lemna_clones_to_remove = as.vector(na.omit(unlist(lemna_clone_df[2:nrow(lemna_clone_df),], use.names=FALSE)))
+     # 
+     # landoltia_clones_to_keep <- setdiff(colnames(landoltia_final@gt)[-1], landoltia_clones_to_remove)
+     # landoltia_clones_to_keep = c("FORMAT", landoltia_clones_to_keep)
+     # 
+     # lemna_clones_to_keep <- setdiff(colnames(lemna_final@gt)[-1], lemna_clones_to_remove)
+     # lemna_clones_to_keep = c("FORMAT", lemna_clones_to_keep)
+     # 
+     # ## remove from final vcfR object
+     # landoltia_final_no_clone = landoltia_final[, landoltia_clones_to_keep]
+     # lemna_final_no_clone = lemna_final[, lemna_clones_to_keep]
+     # 
+     # ## create population file for PGDspider
+     # lemna_names_vec = colnames(lemna_final_no_clone@gt)[-1]
+     # lemna_pop_vec = c("P30", "P32", "P11", "P14", "P36", "P27", "P36", "P30", "P23", "P05",
+     #                   "P07", "P14", "P10", "P18", "P19", "P28", "P10", "P22", "P11", "P16")
+     # 
+     # lemna_pop_file = data.frame(INDIVIDUAL = lemna_names_vec, POP = lemna_pop_vec)
+     # write.table(lemna_pop_file, file = "lemna_population_for_PGDSpider.txt",
+     #             sep = "\t", row.names = FALSE, quote = FALSE)
+     # 
+     # ## export data in vcf format for spider to make structure files
+     # write.vcf(landoltia_final_no_clone, "landoltia_final_no_clone.vcf.gz")
+     # write.vcf(lemna_final_no_clone, "lemna_final_no_clone.vcf.gz")
+
 ## GENETIC DISTANCE AND CLONES ####
      ## LANDOLTIA compute hamming distance ####
      
@@ -683,21 +712,32 @@
      is_saltwater = lengths(st_intersects(brisbane_waterbodies, coast_buffer)) > 0
      brisbane_saltwater = brisbane_waterbodies[is_saltwater, ]
      brisbane_freshwater = brisbane_waterbodies[!is_saltwater, ]
-     
+      
      ## assemble piechart plot
-     
-         #par(mar=c(0,0,0,0))
+            
+         ## these are criminal adjustments, but I seem to need them ... 
+         xmin = min(all_coordinates[,"longitude"])-0.01
+         xmax = max(all_coordinates[,"longitude"])+0.05
+         ymin = -max(all_coordinates[,"latitude"])-0.05
+         ymax = -min(all_coordinates[,"latitude"])+0.05
+        
+         par(mar=c(2,2,2,2))
          plot(st_geometry(brisbane_freshwater), col = "dodgerblue", border = NA)
          plot(st_geometry(brisbane_saltwater), col = "white", border = NA, add = TRUE)
          plot(st_geometry(brisbane_coastline), col = "black", lwd = 1, add = TRUE)
-         rect(min(all_coordinates[,"longitude"])-0.01,
-              -max(all_coordinates[,"latitude"])-0.05,
-              max(all_coordinates[,"longitude"])+0.05,
-              -min(all_coordinates[,"latitude"])+0.05,
+         rect(xmin, ymin, xmax, ymax,
               col=scales::alpha("white", 0.25), border="black", lwd=1)
-         axis(side=1, at=c("152", "152.5", "153", "153.5"), labels=c("152°E", "152.5°E", "153°E", "153.5°E"))
-         axis(side=2, at=c("-28", "-27.8", "-27.6", "-27.4", "-27.2", "-27"), labels=c("-28°S", "-27.8°S", "-27.6°S", "-27.4°S", "-27.2°S", "-27°S"),las=2)
           
+         ## manual x-axis
+         xticks = round(seq(from=xmin, to=xmax-0.02, length.out = 5),2)
+         segments(xticks, ymin, xticks, ymin-(ymax-ymin)*0.01)
+         text(xticks, ymin - (ymax-ymin)*0.05, labels = xticks)
+         
+         ## manual y-axis 
+         yticks = round(seq(from=ymin, to=ymax, length.out = 5),2)
+         segments(xmin, yticks, xmin-(xmax-xmin)*0.01, yticks)
+         mtext(side = 2, at = yticks, text = yticks, las = 1, line = -0.5)
+         
          ## extract waterbody data
          waterbody_map = data.frame(matrix(0, ncol=6,nrow = 0))
          m=0; for (n in unique(substr(micro_sites[,"micro_site_ID"],1,3))){
@@ -728,9 +768,9 @@
          for (n in 1:nrow(waterbody_map)) {
            floating.pie(xpos=waterbody_map[,"lat"][n], ypos=-waterbody_map[,"long"][n], 
                         x=c(waterbody_map[,4][n], waterbody_map[,5][n]), radius=waterbody_map[,"scaled_total"][n],
-                        col=c("purple", "darkgreen"))
+                        col=c(landoltia_col, lemna_col))
          }
-     
+         
      ## MICRO FIGURE: stacked barplot & competitive environment ####
      
      # make categories for stacked barplot
@@ -903,7 +943,7 @@
      ## WATERBODY FIGURE: Within vs outside distance & diversity ####
      
      ## number of iterations
-     iter = 1000
+     iter = 100000
      
      ## set screens
      split.screen(rbind(c(0, 0.55, 0.5, 1), 
