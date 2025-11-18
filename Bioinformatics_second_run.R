@@ -181,26 +181,21 @@
 ## GENETIC DISTANCE AND CLONES ####
      ## LANDOLTIA compute hamming distance ####
      
-     ## replace homozygote, heterozygote, homozygote with 0,1,2
+     ## euclidean distance
+     landoltia_eucdist_raw = as.matrix(bitwise.dist(landoltia_final_genind, euclidean = TRUE))
+     
+     ## order euclidean distance matrix
+     landoltia_eucdist_raw = landoltia_eucdist_raw[landoltia_ordered_names, landoltia_ordered_names]
+     
+     landoltia_max_euclidena 
+     
+     
+     
+     ## make genind object
      landoltia_final_genind = vcfR2genind(landoltia_final)
-     landoltia_genotypes_double = t(landoltia_final_genind@tab)
-     landoltia_genotypes = landoltia_genotypes_double[seq(1, nrow(landoltia_genotypes_double), by = 2), ]
      
-     ## create matrix for manual hamming distance calculation
-     landoltia_hamdist_raw = matrix(NA, nrow=ncol(landoltia_genotypes), ncol=ncol(landoltia_genotypes))
-     colnames(landoltia_hamdist_raw) = colnames(landoltia_genotypes)
-     rownames(landoltia_hamdist_raw) = colnames(landoltia_genotypes)
-     
-     ##  compute hamming distance
-     for (n in 1:ncol(landoltia_genotypes)) {
-          
-          ## compute hamming distance
-          runner_vec = apply(landoltia_genotypes, 2, function(x) sum(abs(landoltia_genotypes[,n] - x), na.rm=TRUE))
-          
-          ## store in matrix
-          landoltia_hamdist_raw[,n] = runner_vec
-          
-     }
+     ## Hammdist via Poppr
+     landoltia_hamdist_raw = as.matrix(diss.dist(landoltia_final_genind))
      
      ## hardcode meaningful order of samples
      landoltia_ordered_names = c("P1S2",
@@ -579,8 +574,6 @@
      rest_col = "#FFFF33"
      
      ## Numbers for M&M ####
-     
-     fake change 
      
      ## nucleotide diversity
      ## seems hard with denovo :(
@@ -3117,4 +3110,30 @@
      
      
      sd
+     
+     ## manual hamming distance calculation ####
+     
+     ## replace homozygote, heterozygote, homozygote with 0,1,2
+     landoltia_final_genind = vcfR2genind(landoltia_final)
+     landoltia_genotypes_double = t(landoltia_final_genind@tab)
+     landoltia_genotypes = landoltia_genotypes_double[seq(1, nrow(landoltia_genotypes_double), by = 2), ]
+     
+     ## create matrix for manual hamming distance calculation
+     landoltia_hamdist_raw = matrix(NA, nrow=ncol(landoltia_genotypes), ncol=ncol(landoltia_genotypes))
+     colnames(landoltia_hamdist_raw) = colnames(landoltia_genotypes)
+     rownames(landoltia_hamdist_raw) = colnames(landoltia_genotypes)
+     
+     ##  compute hamming distance
+     for (n in 1:ncol(landoltia_genotypes)) {
+       
+       ## compute hamming distance
+       runner_vec = apply(landoltia_genotypes, 2, function(x) sum(abs(landoltia_genotypes[,n] - x), na.rm=TRUE))
+       
+       ## store in matrix
+       landoltia_hamdist_raw[,n] = runner_vec
+       
+     }
+     
+     
+     
      
