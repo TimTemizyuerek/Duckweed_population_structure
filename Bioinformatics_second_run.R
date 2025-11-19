@@ -149,8 +149,7 @@
      landoltia_final = missing_by_snp(landoltia_postcvftools_qlty_ab_maxdp_smpl06_thin, cutoff = .95)
      lemna_final = missing_by_snp(lemna_postcvftools_qlty_ab_maxdp_smpl06_thin, cutoff = .95)
      
-     # ## remove clones for structure analysis
-     # 
+     ## remove clones for structure analysis
      # ## identify clones to keep
      # landoltia_clones_to_remove = as.vector(na.omit(unlist(landoltia_clone_df[2:nrow(landoltia_clone_df),], use.names=FALSE)))
      # lemna_clones_to_remove = as.vector(na.omit(unlist(lemna_clone_df[2:nrow(lemna_clone_df),], use.names=FALSE)))
@@ -166,10 +165,15 @@
      # lemna_final_no_clone = lemna_final[, lemna_clones_to_keep]
      # 
      # ## create population file for PGDspider
+     # landoltia_names_vec = colnames(landoltia_final_no_clone@gt)[-1]
+     # landoltia_pop_vec = substr(landoltia_names_vec,1,3)
+     # landoltia_pop_file = data.frame(INDIVIDUAL = landoltia_names_vec, POP = landoltia_pop_vec)
+     # write.table(landoltia_pop_file, file = "landoltia_population_for_PGDSpider.txt",
+     #             sep = "\t", row.names = FALSE, quote = FALSE)
+     # 
      # lemna_names_vec = colnames(lemna_final_no_clone@gt)[-1]
      # lemna_pop_vec = c("P30", "P32", "P11", "P14", "P36", "P27", "P36", "P30", "P23", "P05",
      #                   "P07", "P14", "P10", "P18", "P19", "P28", "P10", "P22", "P11", "P16")
-     # 
      # lemna_pop_file = data.frame(INDIVIDUAL = lemna_names_vec, POP = lemna_pop_vec)
      # write.table(lemna_pop_file, file = "lemna_population_for_PGDSpider.txt",
      #             sep = "\t", row.names = FALSE, quote = FALSE)
