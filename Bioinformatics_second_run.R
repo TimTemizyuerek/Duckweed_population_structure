@@ -9,6 +9,8 @@
      library(data.table) ## for set()
      library(plotrix) ## for floating.pie()
      library(sf) ## for reading shapefiles read_sf()
+     library(stringr) ## for str output string handling
+     
      
      # install_version("SNPfiltR", "1.0.1")
      library(snpStats) ## for linkage disequilibrium
@@ -149,38 +151,38 @@
      landoltia_final = missing_by_snp(landoltia_postcvftools_qlty_ab_maxdp_smpl06_thin, cutoff = .95)
      lemna_final = missing_by_snp(lemna_postcvftools_qlty_ab_maxdp_smpl06_thin, cutoff = .95)
      
-     ## remove clones for structure analysis
-     # ## identify clones to keep
-     # landoltia_clones_to_remove = as.vector(na.omit(unlist(landoltia_clone_df[2:nrow(landoltia_clone_df),], use.names=FALSE)))
-     # lemna_clones_to_remove = as.vector(na.omit(unlist(lemna_clone_df[2:nrow(lemna_clone_df),], use.names=FALSE)))
-     # 
-     # landoltia_clones_to_keep <- setdiff(colnames(landoltia_final@gt)[-1], landoltia_clones_to_remove)
-     # landoltia_clones_to_keep = c("FORMAT", landoltia_clones_to_keep)
-     # 
-     # lemna_clones_to_keep <- setdiff(colnames(lemna_final@gt)[-1], lemna_clones_to_remove)
-     # lemna_clones_to_keep = c("FORMAT", lemna_clones_to_keep)
-     # 
-     # ## remove from final vcfR object
-     # landoltia_final_no_clone = landoltia_final[, landoltia_clones_to_keep]
-     # lemna_final_no_clone = lemna_final[, lemna_clones_to_keep]
-     # 
-     # ## create population file for PGDspider
-     # landoltia_names_vec = colnames(landoltia_final_no_clone@gt)[-1]
-     # landoltia_pop_vec = substr(landoltia_names_vec,1,3)
-     # landoltia_pop_file = data.frame(INDIVIDUAL = landoltia_names_vec, POP = landoltia_pop_vec)
-     # write.table(landoltia_pop_file, file = "landoltia_population_for_PGDSpider.txt",
-     #             sep = "\t", row.names = FALSE, quote = FALSE)
-     # 
-     # lemna_names_vec = colnames(lemna_final_no_clone@gt)[-1]
-     # lemna_pop_vec = c("P30", "P32", "P11", "P14", "P36", "P27", "P36", "P30", "P23", "P05",
-     #                   "P07", "P14", "P10", "P18", "P19", "P28", "P10", "P22", "P11", "P16")
-     # lemna_pop_file = data.frame(INDIVIDUAL = lemna_names_vec, POP = lemna_pop_vec)
-     # write.table(lemna_pop_file, file = "lemna_population_for_PGDSpider.txt",
-     #             sep = "\t", row.names = FALSE, quote = FALSE)
-     # 
-     # ## export data in vcf format for spider to make structure files
-     # write.vcf(landoltia_final_no_clone, "landoltia_final_no_clone.vcf.gz")
-     # write.vcf(lemna_final_no_clone, "lemna_final_no_clone.vcf.gz")
+     # remove clones for structure analysis
+     ## identify clones to keep
+     landoltia_clones_to_remove = as.vector(na.omit(unlist(landoltia_clone_df[2:nrow(landoltia_clone_df),], use.names=FALSE)))
+     lemna_clones_to_remove = as.vector(na.omit(unlist(lemna_clone_df[2:nrow(lemna_clone_df),], use.names=FALSE)))
+
+     landoltia_clones_to_keep <- setdiff(colnames(landoltia_final@gt)[-1], landoltia_clones_to_remove)
+     landoltia_clones_to_keep = c("FORMAT", landoltia_clones_to_keep)
+
+     lemna_clones_to_keep <- setdiff(colnames(lemna_final@gt)[-1], lemna_clones_to_remove)
+     lemna_clones_to_keep = c("FORMAT", lemna_clones_to_keep)
+
+     ## remove from final vcfR object
+     landoltia_final_no_clone = landoltia_final[, landoltia_clones_to_keep]
+     lemna_final_no_clone = lemna_final[, lemna_clones_to_keep]
+
+     ## create population file for PGDspider
+     landoltia_names_vec = colnames(landoltia_final_no_clone@gt)[-1]
+     landoltia_pop_vec = substr(landoltia_names_vec,1,3)
+     landoltia_pop_file = data.frame(INDIVIDUAL = landoltia_names_vec, POP = landoltia_pop_vec)
+     write.table(landoltia_pop_file, file = "landoltia_population_for_PGDSpider.txt",
+                 sep = "\t", row.names = FALSE, quote = FALSE)
+
+     lemna_names_vec = colnames(lemna_final_no_clone@gt)[-1]
+     lemna_pop_vec = c("P30", "P32", "P11", "P14", "P36", "P27", "P36", "P30", "P23", "P05",
+                       "P07", "P14", "P10", "P18", "P19", "P28", "P10", "P22", "P11", "P16")
+     lemna_pop_file = data.frame(INDIVIDUAL = lemna_names_vec, POP = lemna_pop_vec)
+     write.table(lemna_pop_file, file = "lemna_population_for_PGDSpider.txt",
+                 sep = "\t", row.names = FALSE, quote = FALSE)
+
+     ## export data in vcf format for spider to make structure files
+     write.vcf(landoltia_final_no_clone, "landoltia_final_no_clone.vcf.gz")
+     write.vcf(lemna_final_no_clone, "lemna_final_no_clone.vcf.gz")
 
 ## GENETIC DISTANCE AND CLONES ####
      ## LANDOLTIA compute hamming distance ####
@@ -1418,6 +1420,89 @@
      
      
      
+     
+     
+     
+     ## lemna STRUCTURE ANALYSIS ####
+     
+     ## set dir
+     lemna_str_dir = "C:/Users/timte/Desktop/Brisbane/Chapter 1/STRUCTURE/Lemna/lemna_structure_results"
+     
+     ## get filenames
+     file_names = list.files(path= lemna_str_dir, pattern="str_K.*_rep.*_f")
+     
+     ## extract K, rep and LnProb
+     str_analysis_df = as.data.frame(matrix(ncol=3, nrow=0))
+     for (n in file_names) {
+     
+       ## load file
+       runner_text = readLines(paste0(lemna_str_dir,"/", n, sep=""), n=300)
+       
+       ## Get estimated Ln prob of Data
+       lnprob_full = grep("Estimated Ln Prob of Data", runner_text, value=TRUE)
+       lnprob = as.numeric(regmatches(lnprob_full, regexpr("[-]?[0-9]+\\.?[0-9]*", lnprob_full)))
+       
+       ## Get K and replicate
+       k = as.numeric(sub("str_K(\\d+)_rep.*", "\\1", n))
+       rep = as.numeric(sub(".*_rep(\\d+)_f", "\\1", n))
+       
+       ## save in df
+       str_analysis_df = rbind(str_analysis_df, c(k, rep, lnprob))
+     }
+     colnames(str_analysis_df) = c("K", "rep", "LnProb")
+     ## plot lnProb against K
+     plot(str_analysis_df[,"K"], str_analysis_df[,"LnProb"],
+          xlab="K", ylab="Ln probability")
+     
+     ## stacked barplots
+     
+     ## extract table for barplots
+     str_list = list()
+     for (n in file_names) {
+       
+       ## load file
+       runner_text = readLines(paste0(lemna_str_dir,"/", n, sep=""), n=300)
+        
+       ## extract table
+       start = grep("Inferred ancestry of individuals:", runner_text)
+       ancestry_lines = runner_text[(start+2):length(runner_text)]
+       end = which(ancestry_lines == "")[1] - 1
+       ancestry_lines = ancestry_lines[1:end]
+       
+       # Use regex to extract Label, Pop, and the cluster values
+       matches <- str_match(ancestry_lines, "\\s*\\d+\\s+(\\S+)\\s+\\(\\d+\\)\\s+(\\d+)\\s+:\\s+(.+)")
+       
+       ## make dataframe
+       df = data.frame(Label = matches[,2], Pop   = as.integer(matches[,3]), Clusters = matches[,4], stringsAsFactors = FALSE)
+       cluster_matrix = str_split(df$Clusters, "\\s+", simplify = TRUE)
+       cluster_matrix = apply(cluster_matrix, 2, as.numeric)
+       df_final <- cbind(df[,1:2], cluster_matrix[,1:(ncol(cluster_matrix)-1)])
+       colnames(df_final) <- c("Label", "Pop", paste0("Cluster", 1:(ncol(cluster_matrix)-1)))
+       
+       str_list[[which(file_names==n)]] = df_final
+     }
+     names(str_list) = file_names
+     
+     
+     for (n in 1:length(str_list)) {
+     
+       runner_df = str_list[[n]]
+       mat = t(as.matrix(runner_df[,3:ncol(runner_df)]))
+       png(filename = paste0("Lemna ",names(str_list[n]),".png"))
+       
+       bp = barplot(mat, col=rainbow(ncol(mat)), border=NA, space=0,
+                    xlab="Individuals", ylab="Ancestry proportion", main=names(str_list[n]),
+                    xaxt = "n")
+       axis(1, at = bp, labels = df_final[,"Label"], las = 2, cex.axis = 0.7)
+       
+       dev.off()
+       
+     }
+     
+     
+     
+     
+     ancestry_lines <- lines[(start+2):length(lines)]  # +2 skips header lines
      
      
      
