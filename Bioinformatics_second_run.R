@@ -11,7 +11,6 @@
      library(sf) ## for reading shapefiles read_sf()
      library(stringr) ## for str output string handling
      
-     
      # install_version("SNPfiltR", "1.0.1")
      library(snpStats) ## for linkage disequilibrium
      library(SNPfiltR)
@@ -68,7 +67,7 @@
        return(out_rarecurve)
      }
      
-## PIPELINE & FILTERING ####
+## FILTERING and DISTANCE CALCULATION ####
      ## initial filter with vcftools ####
      
      # ## Landoltia
@@ -104,7 +103,7 @@
      # # call command
      # system2("wsl", args = lemna_vcftools_cmd)
 
-     ## comprehensive filter in R ####     
+     ## comprehensive filtering in R ####     
 
      ## load SNP data and population maps
      landoltia_postvcftools = read.vcfR("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/landoltia_post_vcftools.recode.vcf")
@@ -151,57 +150,37 @@
      landoltia_final = missing_by_snp(landoltia_postcvftools_qlty_ab_maxdp_smpl06_thin, cutoff = .95)
      lemna_final = missing_by_snp(lemna_postcvftools_qlty_ab_maxdp_smpl06_thin, cutoff = .95)
      
-     # remove clones for structure analysis
-     ## identify clones to keep
-     landoltia_clones_to_remove = as.vector(na.omit(unlist(landoltia_clone_df[2:nrow(landoltia_clone_df),], use.names=FALSE)))
-     lemna_clones_to_remove = as.vector(na.omit(unlist(lemna_clone_df[2:nrow(lemna_clone_df),], use.names=FALSE)))
-
-     landoltia_clones_to_keep <- setdiff(colnames(landoltia_final@gt)[-1], landoltia_clones_to_remove)
-     landoltia_clones_to_keep = c("FORMAT", landoltia_clones_to_keep)
-
-     lemna_clones_to_keep <- setdiff(colnames(lemna_final@gt)[-1], lemna_clones_to_remove)
-     lemna_clones_to_keep = c("FORMAT", lemna_clones_to_keep)
-
-     ## remove from final vcfR object
-     landoltia_final_no_clone = landoltia_final[, landoltia_clones_to_keep]
-     lemna_final_no_clone = lemna_final[, lemna_clones_to_keep]
-
-     ## create population file for PGDspider
-     landoltia_names_vec = colnames(landoltia_final_no_clone@gt)[-1]
-     landoltia_pop_vec = substr(landoltia_names_vec,1,3)
-     landoltia_pop_file = data.frame(INDIVIDUAL = landoltia_names_vec, POP = landoltia_pop_vec)
-     write.table(landoltia_pop_file, file = "landoltia_population_for_PGDSpider.txt",
-                 sep = "\t", row.names = FALSE, quote = FALSE)
-
-     lemna_names_vec = colnames(lemna_final_no_clone@gt)[-1]
-     lemna_pop_vec = c("P30", "P32", "P11", "P14", "P36", "P27", "P36", "P30", "P23", "P05",
-                       "P07", "P14", "P10", "P18", "P19", "P28", "P10", "P22", "P11", "P16")
-     lemna_pop_file = data.frame(INDIVIDUAL = lemna_names_vec, POP = lemna_pop_vec)
-     write.table(lemna_pop_file, file = "lemna_population_for_PGDSpider.txt",
-                 sep = "\t", row.names = FALSE, quote = FALSE)
-
-     ## export data in vcf format for spider to make structure files
-     write.vcf(landoltia_final_no_clone, "landoltia_final_no_clone.vcf.gz")
-     write.vcf(lemna_final_no_clone, "lemna_final_no_clone.vcf.gz")
-
-## GENETIC DISTANCE AND CLONES ####
+     ## export data in vcf format for dartR's gl.read.vcf
+     # write.vcf(landoltia_final, "landoltia_final.vcf.gz")
+     # write.vcf(lemna_final, "lemna_final.vcf.gz")
+      
      ## LANDOLTIA compute hamming distance ####
-     
-     ## euclidean distance
-     landoltia_eucdist_raw = as.matrix(bitwise.dist(landoltia_final_genind, euclidean = TRUE))
-     
-     ## order euclidean distance matrix
-     landoltia_eucdist_raw = landoltia_eucdist_raw[landoltia_ordered_names, landoltia_ordered_names]
-     
-     landoltia_max_euclidena 
-     
-     
      
      ## make genind object
      landoltia_final_genind = vcfR2genind(landoltia_final)
      
-     ## Hammdist via Poppr
-     landoltia_hamdist_raw = as.matrix(diss.dist(landoltia_final_genind))
+     ## COMPUTE HAMMING DISTANCE
+     
+     ## replace homozygote, heterozygote, homozygote with 0,1,2
+     landoltia_final_genind = vcfR2genind(landoltia_final)
+     landoltia_genotypes_double = t(landoltia_final_genind@tab)
+     landoltia_genotypes = landoltia_genotypes_double[seq(1, nrow(landoltia_genotypes_double), by = 2), ]
+     
+     ## create matrix for manual hamming distance calculation
+     landoltia_hamdist_raw = matrix(NA, nrow=ncol(landoltia_genotypes), ncol=ncol(landoltia_genotypes))
+     colnames(landoltia_hamdist_raw) = colnames(landoltia_genotypes)
+     rownames(landoltia_hamdist_raw) = colnames(landoltia_genotypes)
+     
+     ##  compute hamming distance
+     for (n in 1:ncol(landoltia_genotypes)) {
+       
+       ## compute hamming distance
+       runner_vec = apply(landoltia_genotypes, 2, function(x) sum(abs(landoltia_genotypes[,n] - x), na.rm=TRUE))
+       
+       ## store in matrix
+       landoltia_hamdist_raw[,n] = runner_vec
+       
+     }
      
      ## hardcode meaningful order of samples
      landoltia_ordered_names = c("P1S2",
@@ -257,43 +236,43 @@
      ## remove duplicates
      n=0; whiler = TRUE
      while (whiler == TRUE) {
-          
-          ## counter
-          n=n+1
-          
-          ## check for duplicates
-          if (n >= nrow(clonal_candidates)) {
-               ## stop loop
-               whiler = FALSE
-          }
-          else if (sum(clonal_candidates[,1] == clonal_candidates[n,2] & clonal_candidates[,2] == clonal_candidates[n,1])==1) {
-               ## remove if it does exist
-               clonal_candidates = clonal_candidates[-n,]
-          }
+       
+       ## counter
+       n=n+1
+       
+       ## check for duplicates
+       if (n >= nrow(clonal_candidates)) {
+         ## stop loop
+         whiler = FALSE
+       }
+       else if (sum(clonal_candidates[,1] == clonal_candidates[n,2] & clonal_candidates[,2] == clonal_candidates[n,1])==1) {
+         ## remove if it does exist
+         clonal_candidates = clonal_candidates[-n,]
+       }
      }
      
      ## make clonal groups
      clone_list = vector(mode='list'); lc = 0
      for (n in 1:length(sort(unique(c(unique(clonal_candidates[,1], unique(clonal_candidates[,2]))))))) {
-          
-          ## list counter
-          runner_candidate = sort(unique(c(unique(clonal_candidates[,1], unique(clonal_candidates[,2])))))[n]
-          
-          ## start vector
-          clone_vector = runner_candidate
-          
-          ## clone vector
-          whiler = TRUE
-          while(whiler==TRUE) {
-               pre_clone_vector = clone_vector
-               clone_vector = unique(c(clone_vector,clonal_candidates[unlist(sapply(clone_vector, function(x) which(x==clonal_candidates[,1]))),]))
-               clone_vector = unique(c(clone_vector,clonal_candidates[unlist(sapply(clone_vector, function(x) which(x==clonal_candidates[,2]))),]))
-               if (identical(pre_clone_vector,clone_vector)){whiler = FALSE}
-          }
-          
-          ## add indices to list
-          clone_list[[n]] = sort(clone_vector)
-          
+       
+       ## list counter
+       runner_candidate = sort(unique(c(unique(clonal_candidates[,1], unique(clonal_candidates[,2])))))[n]
+       
+       ## start vector
+       clone_vector = runner_candidate
+       
+       ## clone vector
+       whiler = TRUE
+       while(whiler==TRUE) {
+         pre_clone_vector = clone_vector
+         clone_vector = unique(c(clone_vector,clonal_candidates[unlist(sapply(clone_vector, function(x) which(x==clonal_candidates[,1]))),]))
+         clone_vector = unique(c(clone_vector,clonal_candidates[unlist(sapply(clone_vector, function(x) which(x==clonal_candidates[,2]))),]))
+         if (identical(pre_clone_vector,clone_vector)){whiler = FALSE}
+       }
+       
+       ## add indices to list
+       clone_list[[n]] = sort(clone_vector)
+       
      }
      
      ## remove duplicates
@@ -310,12 +289,12 @@
      for (n in 1:length(landoltia_clone_list)) {landoltia_clone_names[n] = paste0("la_clone",n, sep="")}
      names(landoltia_clone_df) = landoltia_clone_names
      for (n in 1:length(landoltia_clone_list)) {
-          
-          ## transform to vector and put in matrix
-          runner = landoltia_clone_list[[n]]
-          runner = c(runner, rep(NA, max(lengths)-length(runner)))
-          landoltia_clone_df[,n] = runner
-          
+       
+       ## transform to vector and put in matrix
+       runner = landoltia_clone_list[[n]]
+       runner = c(runner, rep(NA, max(lengths)-length(runner)))
+       landoltia_clone_df[,n] = runner
+       
      }
      
      ## add single individual clones
@@ -331,47 +310,6 @@
      
      ## export table
      # write.csv(landoltia_clone_df, paste("Landoltia_clones_hamming0-",landoltia_clone_cutoff,".csv", sep=""))
-     
-     ## LANDOLTIA create clone, no clone and no clone + alive hamming distance ####
-     
-     ## remove clones
-     landoltia_noclone = landoltia_final
-     for (n in 1:ncol(landoltia_clone_df)) {
-          
-          ## run through landoltia_clone_df by col
-          runner_clone = landoltia_clone_df[,n]; runner_clone = runner_clone[!is.na(runner_clone)]
-          
-          # identify and remove clones
-          to_keep = which(!colnames(landoltia_noclone@gt) %in% runner_clone[2:length(runner_clone)])
-          landoltia_noclone = landoltia_noclone[, to_keep]
-          
-     }
-     landoltia_noclone_names = colnames(landoltia_noclone@gt)[-1]
-     
-     ## adjust hamdist
-     landoltia_noclone_hamdist = landoltia_hamdist[which(names(landoltia_hamdist[1,]) %in% landoltia_noclone_names),
-                                                   which(names(landoltia_hamdist[1,]) %in% landoltia_noclone_names)]     
-     
-     ## landoltia still in collection
-     landoltia_alive = c("P2S2",
-                         "P11S12",
-                         "P12S4", "P12S5", "P12S6",
-                         "P13S1", "P13S2",
-                         "P14S7", "P14S8", "P14S9", "P14S12", "P14S13", "P14S16", "P14S18", "P14S22","P14S23", "P14S24", "P14S30", "P14S37", "P14S38", "P14S41", "P14S42", "P14S46", "P14S48", "P14S52", "P14S53",
-                         "P15S3",
-                         "P19S11", "P19S12", "P19S16", "P19S17", "P19S22", "P19S23", "P19S26", "P19S34", "P19S36", "P19S40", "P19S41", "P19S42", "P19S43", "P19S52", "P19S53", "P19S54",
-                         "P23S4", "P23S5", "P23S6",
-                         "P24S2", "P24S3",
-                         "P25S1", "P25S3",
-                         "P26S1", "P26S3",
-                         "P27S3", "P27S7", "P27S13", "P27S26", "P27S28", "P27S29", "P27S30", "P27S35", "P27S51", 
-                         "P28S3",
-                         "P36S1", "P36S2", "P36S7", "P36S16", "P36S34", "P36S41")
-     
-     ## gendist matrix for living plants
-     landoltia_noclone_alive_hamdist = landoltia_noclone_hamdist[which(names(landoltia_noclone_hamdist[1,]) %in% landoltia_alive),
-                                                                 which(names(landoltia_noclone_hamdist[1,]) %in% landoltia_alive)]
-     
      
      ## LEMNA compute hamming distance ####
      
@@ -523,47 +461,40 @@
      ## export table
      # write.csv(lemna_clone_df, paste("lemna_clones_hamming0-",lemna_clone_cutoff,".csv", sep=""))
      
-     ## LEMNA create clone, no clone and no clone + alive hamming distance ####
+     ## remove clones for STRUCTURE ####
      
-     ## remove clones
-     lemna_noclone = lemna_final
-     for (n in 1:ncol(lemna_clone_df)) {
-       
-       ## run through lemna_clone_df by col
-       runner_clone = lemna_clone_df[,n]; runner_clone = runner_clone[!is.na(runner_clone)]
-       
-       # identify and remove clones
-       to_keep = which(!colnames(lemna_noclone@gt) %in% runner_clone[2:length(runner_clone)])
-       lemna_noclone = lemna_noclone[, to_keep]
-       
-     }
-     lemna_noclone_names = colnames(lemna_noclone@gt)[-1]
-     
-     ## adjust hamdist
-     lemna_noclone_hamdist = lemna_hamdist[which(names(lemna_hamdist[1,]) %in% lemna_noclone_names),
-                                                   which(names(lemna_hamdist[1,]) %in% lemna_noclone_names)]     
-     
-     ## lemna still in collection
-     lemna_alive = c("P7S2", "P7S3",
-                     "P10S28",
-                     "P11S8",
-                     "P14S25", "P14S26", "P14S43", "P14S45",
-                     "P19S19", "P19S20", "P19S29", "P19S30", "P19S31", "P19S38", "P19S39", "P19S49",
-                     "P23S1", "P23S2", "P23S3", "P23S8",
-                     "P27S4", "P27S10", "P27S42","P27S52",
-                     "P29S1",
-                     "P31S3",
-                     "P35S2", "P35S3")
-     
-     ## gendist matrix for living plants
-     lemna_noclone_alive_hamdist = lemna_noclone_hamdist[which(names(lemna_noclone_hamdist[1,]) %in% lemna_alive),
-                                                                 which(names(lemna_noclone_hamdist[1,]) %in% lemna_alive)]
-     
-     
-     
-     
-     
-     
+     ## identify clones to keep
+     landoltia_clones_to_remove = as.vector(na.omit(unlist(landoltia_clone_df[2:nrow(landoltia_clone_df),], use.names=FALSE)))
+     lemna_clones_to_remove = as.vector(na.omit(unlist(lemna_clone_df[2:nrow(lemna_clone_df),], use.names=FALSE)))
+
+     landoltia_clones_to_keep <- setdiff(colnames(landoltia_final@gt)[-1], landoltia_clones_to_remove)
+     landoltia_clones_to_keep = c("FORMAT", landoltia_clones_to_keep)
+
+     lemna_clones_to_keep <- setdiff(colnames(lemna_final@gt)[-1], lemna_clones_to_remove)
+     lemna_clones_to_keep = c("FORMAT", lemna_clones_to_keep)
+
+     ## remove from final vcfR object
+     landoltia_final_no_clone = landoltia_final[, landoltia_clones_to_keep]
+     lemna_final_no_clone = lemna_final[, lemna_clones_to_keep]
+
+     ## create population file for PGDspider
+     landoltia_names_vec = colnames(landoltia_final_no_clone@gt)[-1]
+     landoltia_pop_vec = substr(landoltia_names_vec,1,3)
+     landoltia_pop_file = data.frame(INDIVIDUAL = landoltia_names_vec, POP = landoltia_pop_vec)
+     # write.table(landoltia_pop_file, file = "landoltia_population_for_PGDSpider.txt",
+     #             sep = "\t", row.names = FALSE, quote = FALSE)
+
+     lemna_names_vec = colnames(lemna_final_no_clone@gt)[-1]
+     lemna_pop_vec = c("P30", "P32", "P11", "P14", "P36", "P27", "P36", "P30", "P23", "P05",
+                       "P07", "P14", "P10", "P18", "P19", "P28", "P10", "P22", "P11", "P16")
+     lemna_pop_file = data.frame(INDIVIDUAL = lemna_names_vec, POP = lemna_pop_vec)
+     # write.table(lemna_pop_file, file = "lemna_population_for_PGDSpider.txt",
+     #             sep = "\t", row.names = FALSE, quote = FALSE)
+
+     ## export data in vcf format for spider to make structure files
+     # write.vcf(landoltia_final_no_clone, "landoltia_final_no_clone.vcf.gz")
+     # write.vcf(lemna_final_no_clone, "lemna_final_no_clone.vcf.gz")
+
      
 ## DATA VISUALISATION / RESULTS ####
      ## colour set-up ####
@@ -581,9 +512,76 @@
      
      ## Numbers for M&M ####
      
-     ## nucleotide diversity
-     ## seems hard with denovo :(
+     ## Observed heterozygosity, expected heretozygostiy and inbreeding coefficient (FIS)
      
+     ## LANDOLTIA
+         
+         ## extract SNP information 
+         landoltia_genotype_matrix = extract.gt(landoltia_final, element = "GT", as.numeric=FALSE)
+         
+         ## recode to numeric
+         landoltia_genotype_matrix_num = matrix(NA, nrow = nrow(landoltia_genotype_matrix), ncol = ncol(landoltia_genotype_matrix))
+         rownames(landoltia_genotype_matrix_num) = rownames(landoltia_genotype_matrix)
+         colnames(landoltia_genotype_matrix_num) = colnames(landoltia_genotype_matrix)
+         landoltia_genotype_matrix_num[landoltia_genotype_matrix %in% c("0/0")] = 0
+         landoltia_genotype_matrix_num[landoltia_genotype_matrix %in% c("0/1","1/0")] = 1
+         landoltia_genotype_matrix_num[landoltia_genotype_matrix %in% c("1/1")] = 2
+         landoltia_genotype_matrix_num[landoltia_genotype_matrix %in% c("./.")] = NA
+         
+         ## compute observed heterozygosity
+         landoltia_obs_he_per_snp = rowSums(landoltia_genotype_matrix_num == 1, na.rm = TRUE) / rowSums(!is.na(landoltia_genotype_matrix_num))
+         
+         ## compute expected heterozygosity
+         landoltia_exp_he_per_snp = apply(landoltia_genotype_matrix_num, 1, function(snp) {
+           ## remove NA
+           snp = snp[!is.na(snp)]
+           ## count alleles
+           n_ref = sum(2*(snp == 0) + 1*(snp == 1))
+           n_alt = sum(2*(snp == 2) + 1*(snp == 1))
+           ## compute allele frequencies
+           p = n_ref / (n_ref + n_alt)
+           q = n_alt / (n_ref + n_alt)
+           ## compute expected hetereozygosity
+           1 - (p^2 + q^2)
+         })
+         
+         ## compute FIS (inbreeding coefficient)
+         landoltia_mean_FIS_per_snp = mean(1 - (landoltia_obs_he_per_snp / landoltia_exp_he_per_snp))
+    
+     ## LEMNA
+     
+         ## extract SNP information 
+         lemna_genotype_matrix = extract.gt(lemna_final, element = "GT", as.numeric=FALSE)
+         
+         ## recode to numeric
+         lemna_genotype_matrix_num = matrix(NA, nrow = nrow(lemna_genotype_matrix), ncol = ncol(lemna_genotype_matrix))
+         rownames(lemna_genotype_matrix_num) = rownames(lemna_genotype_matrix)
+         colnames(lemna_genotype_matrix_num) = colnames(lemna_genotype_matrix)
+         lemna_genotype_matrix_num[lemna_genotype_matrix %in% c("0/0")] = 0
+         lemna_genotype_matrix_num[lemna_genotype_matrix %in% c("0/1","1/0")] = 1
+         lemna_genotype_matrix_num[lemna_genotype_matrix %in% c("1/1")] = 2
+         lemna_genotype_matrix_num[lemna_genotype_matrix %in% c("./.")] = NA
+         
+         ## compute observed heterozygosity
+         lemna_obs_he_per_snp = rowSums(lemna_genotype_matrix_num == 1, na.rm = TRUE) / rowSums(!is.na(lemna_genotype_matrix_num))
+         
+         ## compute expected heterozygosity
+         lemna_exp_he_per_snp = apply(lemna_genotype_matrix_num, 1, function(snp) {
+           ## remove NA
+           snp = snp[!is.na(snp)]
+           ## count alleles
+           n_ref = sum(2*(snp == 0) + 1*(snp == 1))
+           n_alt = sum(2*(snp == 2) + 1*(snp == 1))
+           ## compute allele frequencies
+           p = n_ref / (n_ref + n_alt)
+           q = n_alt / (n_ref + n_alt)
+           ## compute expected hetereozygosity
+           1 - (p^2 + q^2)
+         })
+         
+         ## compute FIS (inbreeding coefficient)
+         lemna_mean_FIS_per_snp = mean(1 - (lemna_obs_he_per_snp / lemna_exp_he_per_snp))
+         
      ## waterbody df
      shared_waterbodies = data.frame(P1 = "landoltia",
                                      P2 = "landoltia",
@@ -638,8 +636,6 @@
      
      sort(unique(sampling_data[,"ID"]))
      nrow(sampling_data)
-     
-     
      
      ## MAP ####
      
@@ -772,7 +768,7 @@
                         col=c(landoltia_col, lemna_col))
          }
          
-     ## MICRO FIGURE: stacked barplot & competitive environment ####
+     ## MICRO SITE: stacked barplot & competitive environment ####
      
      # make categories for stacked barplot
      micro_summary[,"group"] = ifelse(micro_summary[,"lemna"] > 0 & micro_summary[,"landoltia"] == 0, "lemna",
@@ -789,13 +785,13 @@
      
      ## stacked barplot
      
-         # assembly plot and legend
-         barplot(stacked_barplotter, 
-                 col=c(lemna_col, landoltia_col, both_col), 
-                 space=0.1, ylab="Frequency", xlab="Plants per micro site", ylim=c(0,(max(colSums(stacked_barplotter))+1)))
-         box();
-         legend("topleft", inset=0.01, legend=c("lemna", "landoltia", "both"),
-                fill=c(lemna_col, landoltia_col, both_col))
+         # # assembly plot and legend
+         # barplot(stacked_barplotter, 
+         #         col=c(lemna_col, landoltia_col, both_col), 
+         #         space=0.1, ylab="Frequency", xlab="Plants per micro site", ylim=c(0,(max(colSums(stacked_barplotter))+1)))
+         # box();
+         # legend("topleft", inset=0.01, legend=c("lemna", "landoltia", "both"),
+         #        fill=c(lemna_col, landoltia_col, both_col))
          
      
      ## two species within micro site diversity
@@ -941,7 +937,7 @@
          ## t test to comparing genetic distances at micro sites
          t.test(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"], paired=FALSE)
      
-     ## WATERBODY FIGURE: Within vs outside distance & diversity ####
+     ## WATERBODY: within vs outside distance & diversity ####
      
      ## number of iterations
      iter = 100000
@@ -1240,176 +1236,82 @@
      ## LEMNA
      vegan::mantel(lemna_hamdist, lemna_geodist, permutations = 1000)
      
-     ## POPULATION: Clone Distribution ####
-    
-     ## create boxplot with lemna clone dist and landoltia clone dist
+     ## POPULATION: PCAs ####
      
-     ## extract # of waterbody for each clone
+     ## transform files
+     landoltia_final_pca = vcfR2genlight(landoltia_final)
+     landoltia_clone_no_missing_data = tab(landoltia_final_pca, NA.method = "mean")
      
-     landoltia_boxplotter = sapply(apply(landoltia_clone_df, 2, function(x) unique(na.omit(substr(x,1,3)))),length)
-     lemna_boxplotter = sapply(apply(lemna_clone_df, 2, function(x) unique(na.omit(substr(x,1,3)))),length)
+     landoltia_final_no_clone_pca = vcfR2genlight(landoltia_final_no_clone)
+     landoltia_no_clone_no_missing_data = tab(landoltia_final_no_clone_pca, NA.method = "mean")
      
-     plot(1:length(landoltia_boxplotter), rev(sort(landoltia_boxplotter)))
-     plot(1:length(lemna_boxplotter), rev(sort(lemna_boxplotter)))
+     lemna_final_pca = vcfR2genlight(lemna_final)
+     lemna_clone_no_missing_data = tab(lemna_final_pca, NA.method = "mean")
      
-     boxplot(landoltia_boxplotter, lemna_boxplotter)
-     
-     boxplot(landoltia_boxplotter)blemna_boxplotteroxplot(landoltia_boxplotter)
-     
-     hist(lemna_boxplotter)
-     hist(boxplotter)
+     lemna_final_no_clone_pca = vcfR2genlight(lemna_final_no_clone)
+     lemna_no_clone_no_missing_data = tab(lemna_final_no_clone_pca, NA.method = "mean")
      
      
-     sd
-     ## Figure 5: PCAs ####
+     par(mfrow=c(1,2))
      
      ## LANDOLTIA
-     
-         ## transform file
-         landoltia_final_pca = vcfR2genlight(landoltia_final)
+       
+         ## run PCA
+         landoltia_dudipca_result = dudi.pca(landoltia_clone_no_missing_data, scannf = FALSE, nf = 3)
+         landoltia_pca_plotter = landoltia_dudipca_result$li
          
-         par(mfrow=c(2,2))
-         ## run and plot PCA
-         landoltia_no_missing_data = tab(landoltia_final_pca, NA.method = "mean")
+         ## add clone identity
+         landoltia_cloner = rep(NA, nrow(landoltia_pca_plotter))
+         for (n in rownames(landoltia_pca_plotter)) {landoltia_cloner[which(rownames(landoltia_pca_plotter)==n)] = colnames(landoltia_clone_df)[which(landoltia_clone_df == n, arr.ind = TRUE)[2]]}
+         landoltia_cloner = paste0("c",sub(".*?(\\d+)$", "\\1", landoltia_cloner))
+         landoltia_pca_plotter$cloneID = landoltia_cloner
          
-         dudipca_result = dudi.pca(landoltia_no_missing_data, scannf = FALSE, nf = 3)
-         plot(dudipca_result$li[,1], dudipca_result$li[,2], 
+         ## assemble plpt
+         plot(landoltia_pca_plotter[,"Axis1"], landoltia_pca_plotter[,"Axis2"], 
               xlab = paste0("PC1 (", round((dudipca_result$eig[1] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
               ylab = paste0("PC2 (", round((dudipca_result$eig[2] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
-              main = "Landoltia ade4::dudi.pca()", pch = 19, 
-              col = ifelse(grepl("P10", rownames(dudipca_result$li)), "red",
-                           ifelse(grepl("P14", rownames(dudipca_result$li)), "blue", 
-                                  ifelse(grepl("P19", rownames(dudipca_result$li)), "darkgreen",
-                                         ifelse(grepl("P27", rownames(dudipca_result$li)), "purple",
-                                                ifelse(grepl("P36", rownames(dudipca_result$li)), "orange", "black")))))
-              )
-         
-         glpca_result = glPca(landoltia_final_pca, nf=3)
-         plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
-              xlab = paste0("PC1 (", round((glpca_result$eig[1] / sum(glpca_result$eig)) * 100,2),"%)", sep=""), 
-              ylab = paste0("PC1 (", round((glpca_result$eig[2] / sum(glpca_result$eig)) * 100,2),"%)", sep=""),
-              main = "Landoltia adegenet::glPca", pch = 19, 
-              col = ifelse(grepl("P10", rownames(glpca_result$scores)), "red",
-                           ifelse(grepl("P14", rownames(glpca_result$scores)), "blue", 
-                                  ifelse(grepl("P19", rownames(glpca_result$scores)), "darkgreen",
-                                         ifelse(grepl("P27", rownames(glpca_result$scores)), "purple",
-                                                ifelse(grepl("P36", rownames(glpca_result$scores)), "orange", "black")))))
-         )
-         
-         ## transform to DGS from VCF
-         snpgdsVCF2GDS("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/landoltia_final.vcf",
-                       out.fn="GDS_for_SNPRelate")
-         landoltia_final_gds = snpgdsOpen("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/GDS_for_SNPRelate")
-         
-         ## compute PCA
-         snprelate_result = snpgdsPCA(landoltia_final_gds)
-         
-         snpgdsClose(landoltia_final_gds)
-         
-         ## transform for plotting
-         snprelate_plotter = data.frame(sample.id = substr(snprelate_result$sample.id,1,3),
-                                        EV1 = snprelate_result$eigenvect[,1],    # the first eigenvector
-                                        EV2 = snprelate_result$eigenvect[,2],    # the second eigenvector
-                                        stringsAsFactors = FALSE)
-         
-         ## assemble plot                                
-         plot(snprelate_plotter$EV2, snprelate_plotter$EV1, 
-              xlab=paste0("PC1 (", round(snprelate_result$varprop[1]*100,2),"%)", sep=""), 
-              ylab=paste0("PC2 (", round(snprelate_result$varprop[2]*100,2),"%)", sep=""),
-              main="Landoltia SNPRelate::snprgdsPCA",
-              pch=19, col = ifelse(grepl("P10", snprelate_plotter$sample.id), "red",
-                                   ifelse(grepl("P14", snprelate_plotter$sample.id), "blue", 
-                                          ifelse(grepl("P19", snprelate_plotter$sample.id), "darkgreen",
-                                                 ifelse(grepl("P27", snprelate_plotter$sample.id), "purple",
-                                                        ifelse(grepl("P36", snprelate_plotter$sample.id), "orange", "black")))))
-         )
-         
-         ## compute PCA
-         ASRgenomics_result = snp.pca(landoltia_no_missing_data)
-         plot(ASRgenomics_result$pca.scores[,"PC1"],ASRgenomics_result$pca.scores[,"PC2"],
-              xlab=paste0("PC1 (", round(ASRgenomics_result$eigenvalues[1,2],2),"%)", sep=""), 
-              ylab=paste0("PC2 (", round(ASRgenomics_result$eigenvalues[2,2],2),"%)", sep=""),
-              main="Landoltia ASRgenomics::scp.pca",
-              pch=19, col = ifelse(grepl("P10", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "red",
-                                   ifelse(grepl("P14", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "blue", 
-                                          ifelse(grepl("P19", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "darkgreen",
-                                                 ifelse(grepl("P27", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "purple",
-                                                        ifelse(grepl("P36", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "orange", "black")))))
-         )
-     
+              main = "landoltia", pch = 21, 
+              bg = ifelse(grepl("P10", rownames(dudipca_result$li)), P10_col,
+                          ifelse(grepl("P14", rownames(dudipca_result$li)), P14_col, 
+                                 ifelse(grepl("P19", rownames(dudipca_result$li)), P19_col,
+                                        ifelse(grepl("P27", rownames(dudipca_result$li)), P27_col,
+                                               ifelse(grepl("P36", rownames(dudipca_result$li)), P36_col, rest_col))))))
+         text(landoltia_pca_plotter[,"Axis1"], landoltia_pca_plotter[,"Axis2"], 
+              labels=landoltia_pca_plotter[,"cloneID"], cex=0.7, pos=sample(1:4,nrow(landoltia_pca_plotter), replace = TRUE),
+              col="gray30")
+         legend("bottomright", legend=c("P10","P14", "P19", "P27", "P36", "other"),
+                pt.bg=c(P10_col,P14_col, P19_col, P27_col, P36_col, rest_col),
+                pch=21, bty="n")
+             
      ## LEMNA
      
-         ## transform file
-         lemna_final_pca = vcfR2genlight(lemna_final)
+         ## run PCA
+         lemna_dudipca_result = dudi.pca(lemna_clone_no_missing_data, scannf = FALSE, nf = 3)
+         lemna_pca_plotter = lemna_dudipca_result$li
          
-         par(mfrow=c(2,2))
-         ## run and plot PCA
-         lemna_no_missing_data = tab(lemna_final_pca, NA.method = "mean")
+         ## add clone identity
+         lemna_cloner = rep(NA, nrow(lemna_pca_plotter))
+         for (n in rownames(lemna_pca_plotter)) {lemna_cloner[which(rownames(lemna_pca_plotter)==n)] = colnames(lemna_clone_df)[which(lemna_clone_df == n, arr.ind = TRUE)[2]]}
+         lemna_cloner = paste0("c",sub(".*?(\\d+)$", "\\1", lemna_cloner))
+         lemna_pca_plotter$cloneID = lemna_cloner
          
-         dudipca_result = dudi.pca(lemna_no_missing_data, scannf = FALSE, nf = 3)
-         plot(dudipca_result$li[,1], dudipca_result$li[,2], 
+         ## assemble plpt
+         plot(lemna_pca_plotter[,"Axis1"], lemna_pca_plotter[,"Axis2"], 
               xlab = paste0("PC1 (", round((dudipca_result$eig[1] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
               ylab = paste0("PC2 (", round((dudipca_result$eig[2] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
-              main = "Lemna ade4::dudi.pca()", pch = 19, 
-              col = ifelse(grepl("P10", rownames(dudipca_result$li)), "red",
-                           ifelse(grepl("P14", rownames(dudipca_result$li)), "blue", 
-                                  ifelse(grepl("P19", rownames(dudipca_result$li)), "darkgreen",
-                                         ifelse(grepl("P27", rownames(dudipca_result$li)), "purple",
-                                                ifelse(grepl("P36", rownames(dudipca_result$li)), "orange", "black")))))
-         )
-         
-         glpca_result = glPca(lemna_final_pca, nf=3)
-         plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
-              xlab = paste0("PC1 (", round((glpca_result$eig[1] / sum(glpca_result$eig)) * 100,2),"%)", sep=""), 
-              ylab = paste0("PC1 (", round((glpca_result$eig[2] / sum(glpca_result$eig)) * 100,2),"%)", sep=""),
-              main = "Lemna adegenet::glPca", pch = 19, 
-              col = ifelse(grepl("P10", rownames(glpca_result$scores)), "red",
-                           ifelse(grepl("P14", rownames(glpca_result$scores)), "blue", 
-                                  ifelse(grepl("P19", rownames(glpca_result$scores)), "darkgreen",
-                                         ifelse(grepl("P27", rownames(glpca_result$scores)), "purple",
-                                                ifelse(grepl("P36", rownames(glpca_result$scores)), "orange", "black")))))
-         )
-         
-         ## transform to DGS from VCF
-         snpgdsVCF2GDS("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/lemna_final.vcf",
-                       out.fn="GDS_for_SNPRelate")
-         lemna_final_gds = snpgdsOpen("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/GDS_for_SNPRelate")
-         
-         ## compute PCA
-         snprelate_result = snpgdsPCA(lemna_final_gds)
-         
-         snpgdsClose(lemna_final_gds)
-         
-         ## transform for plotting
-         snprelate_plotter = data.frame(sample.id = substr(snprelate_result$sample.id,1,3),
-                                        EV1 = snprelate_result$eigenvect[,1],    # the first eigenvector
-                                        EV2 = snprelate_result$eigenvect[,2],    # the second eigenvector
-                                        stringsAsFactors = FALSE)
-         
-         ## assemble plot                                
-         plot(snprelate_plotter$EV2, snprelate_plotter$EV1, 
-              xlab=paste0("PC1 (", round(snprelate_result$varprop[1]*100,2),"%)", sep=""), 
-              ylab=paste0("PC2 (", round(snprelate_result$varprop[2]*100,2),"%)", sep=""),
-              main="Lemna SNPRelate::snprgdsPCA",
-              pch=19, col = ifelse(grepl("P10", snprelate_plotter$sample.id), "red",
-                                   ifelse(grepl("P14", snprelate_plotter$sample.id), "blue", 
-                                          ifelse(grepl("P19", snprelate_plotter$sample.id), "darkgreen",
-                                                 ifelse(grepl("P27", snprelate_plotter$sample.id), "purple",
-                                                        ifelse(grepl("P36", snprelate_plotter$sample.id), "orange", "black")))))
-         )
-         
-         ## compute PCA
-         ASRgenomics_result = snp.pca(lemna_no_missing_data)
-         plot(ASRgenomics_result$pca.scores[,"PC1"],ASRgenomics_result$pca.scores[,"PC2"],
-              xlab=paste0("PC1 (", round(ASRgenomics_result$eigenvalues[1,2],2),"%)", sep=""), 
-              ylab=paste0("PC2 (", round(ASRgenomics_result$eigenvalues[2,2],2),"%)", sep=""),
-              main="Lemna ASRgenomics::scp.pca",
-              pch=19, col = ifelse(grepl("P10", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "red",
-                                   ifelse(grepl("P14", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "blue", 
-                                          ifelse(grepl("P19", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "darkgreen",
-                                                 ifelse(grepl("P27", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "purple",
-                                                        ifelse(grepl("P36", substr(rownames(ASRgenomics_result$pca.scores),1,3)), "orange", "black")))))
-         )
+              main = "lemna", pch = 21, 
+              bg = ifelse(grepl("P10", rownames(dudipca_result$li)), P10_col,
+                          ifelse(grepl("P14", rownames(dudipca_result$li)), P14_col, 
+                                 ifelse(grepl("P19", rownames(dudipca_result$li)), P19_col,
+                                        ifelse(grepl("P27", rownames(dudipca_result$li)), P27_col,
+                                               ifelse(grepl("P36", rownames(dudipca_result$li)), P36_col, rest_col))))))
+         text(lemna_pca_plotter[,"Axis1"], lemna_pca_plotter[,"Axis2"], 
+              labels=lemna_pca_plotter[,"cloneID"], cex=0.7, pos=sample(1:4,nrow(lemna_pca_plotter), replace = TRUE),
+              col="gray30")
+         legend("topright", legend=c("P10","P14", "P19", "P27", "P36", "other"),
+                pt.bg=c(P10_col,P14_col, P19_col, P27_col, P36_col, rest_col),
+                pch=21, bty="n")
+          
          
      ## mantel test and the like ####
      
@@ -1423,7 +1325,7 @@
      
      
      
-     ## lemna STRUCTURE ANALYSIS ####
+     ## STRUCTURE ANALYSIS ####
      
      ## set dir
      lemna_str_dir = "C:/Users/timte/Desktop/Brisbane/Chapter 1/STRUCTURE/Lemna/lemna_structure_results"
@@ -1452,7 +1354,7 @@
      colnames(str_analysis_df) = c("K", "rep", "LnProb")
      ## plot lnProb against K
      plot(str_analysis_df[,"K"], str_analysis_df[,"LnProb"],
-          xlab="K", ylab="Ln probability")
+          xlab="K", ylab="Ln probability", main="Lemna")
      
      ## stacked barplots
      
@@ -1482,15 +1384,13 @@
        str_list[[which(file_names==n)]] = df_final
      }
      names(str_list) = file_names
-     
-     
      for (n in 1:length(str_list)) {
-     
-       runner_df = str_list[[n]]
-       mat = t(as.matrix(runner_df[,3:ncol(runner_df)]))
-       png(filename = paste0("Lemna ",names(str_list[n]),".png"))
        
-       bp = barplot(mat, col=rainbow(ncol(mat)), border=NA, space=0,
+       runner_df = str_list[[n]]
+       mat = as.matrix(runner_df[,2:ncol(runner_df)])
+       png(filename = paste0("Lemna ",names(str_list[n]),".png"), res=100, width = 600, height=600)
+       
+       bp = barplot(t(mat[,2:ncol(mat)]), col=rainbow(ncol(mat)), border=NA, space=0,
                     xlab="Individuals", ylab="Ancestry proportion", main=names(str_list[n]),
                     xaxt = "n")
        axis(1, at = bp, labels = df_final[,"Label"], las = 2, cex.axis = 0.7)
@@ -1499,10 +1399,77 @@
        
      }
      
+     ## set dir
+     landoltia_str_dir = "C:/Users/timte/Desktop/Brisbane/Chapter 1/STRUCTURE/Landoltia/landoltia_structure_results"
+                      
+     ## get filenames
+     file_names = list.files(path= landoltia_str_dir, pattern="str_K.*_rep.*_f")
      
+     ## extract K, rep and LnProb
+     str_analysis_df = as.data.frame(matrix(ncol=3, nrow=0))
+     for (n in file_names) {
+       
+       ## load file
+       runner_text = readLines(paste0(landoltia_str_dir,"/", n, sep=""), n=300)
+       
+       ## Get estimated Ln prob of Data
+       lnprob_full = grep("Estimated Ln Prob of Data", runner_text, value=TRUE)
+       lnprob = as.numeric(regmatches(lnprob_full, regexpr("[-]?[0-9]+\\.?[0-9]*", lnprob_full)))
+       
+       ## Get K and replicate
+       k = as.numeric(sub("str_K(\\d+)_rep.*", "\\1", n))
+       rep = as.numeric(sub(".*_rep(\\d+)_f", "\\1", n))
+       
+       ## save in df
+       str_analysis_df = rbind(str_analysis_df, c(k, rep, lnprob))
+     }
+     colnames(str_analysis_df) = c("K", "rep", "LnProb")
+     ## plot lnProb against K
+     plot(str_analysis_df[,"K"], str_analysis_df[,"LnProb"],
+          xlab="K", ylab="Ln probability", main="Landoltia")
      
+     ## stacked barplots
      
-     ancestry_lines <- lines[(start+2):length(lines)]  # +2 skips header lines
+     ## extract table for barplots
+     str_list = list()
+     for (n in file_names) {
+       
+       ## load file
+       runner_text = readLines(paste0(landoltia_str_dir,"/", n, sep=""), n=300)
+       
+       ## extract table
+       start = grep("Inferred ancestry of individuals:", runner_text)
+       ancestry_lines = runner_text[(start+2):length(runner_text)]
+       end = which(ancestry_lines == "")[1] - 1
+       ancestry_lines = ancestry_lines[1:end]
+       
+       # Use regex to extract Label, Pop, and the cluster values
+       matches <- str_match(ancestry_lines, "\\s*\\d+\\s+(\\S+)\\s+\\(\\d+\\)\\s+(\\d+)\\s+:\\s+(.+)")
+       
+       ## make dataframe
+       df = data.frame(Label = matches[,2], Pop   = as.integer(matches[,3]), Clusters = matches[,4], stringsAsFactors = FALSE)
+       cluster_matrix = str_split(df$Clusters, "\\s+", simplify = TRUE)
+       cluster_matrix = apply(cluster_matrix, 2, as.numeric)
+       df_final <- cbind(df[,1:2], cluster_matrix[,1:(ncol(cluster_matrix)-1)])
+       colnames(df_final) <- c("Label", "Pop", paste0("Cluster", 1:(ncol(cluster_matrix)-1)))
+       
+       str_list[[which(file_names==n)]] = df_final
+     }
+     names(str_list) = file_names
+     for (n in 1:length(str_list)) {
+       
+       runner_df = str_list[[n]]
+       mat = as.matrix(runner_df[,2:ncol(runner_df)])
+       png(filename = paste0("Landoltia ",names(str_list[n]),".png"), res=100, width = 1000, height=1000)
+       
+       bp = barplot(t(mat[,2:ncol(mat)]), col=rainbow(ncol(mat)), border=NA, space=0,
+                    xlab="Individuals", ylab="Ancestry proportion", main=names(str_list[n]),
+                    xaxt = "n")
+       axis(1, at = bp, labels = df_final[,"Label"], las = 2, cex.axis = 0.5)
+       
+       dev.off()
+       
+     }
      
      
      
@@ -3140,6 +3107,8 @@
      
      ## rarefaction curves ####
      
+     par(mfrow=c(2,2))
+     
      landoltia_pond10 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P10")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P10"))]      
      landoltia_pond14 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P14")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P14"))]      
      landoltia_pond19 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P19")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P19"))]      
@@ -3160,12 +3129,13 @@
      landoltia_rareplot_P27 = rarecurve(landoltia_rarecurve_P27)
      landoltia_rareplot_P36 = rarecurve(landoltia_rarecurve_P36)
      
-     plot(1:length(landoltia_rareplot_all[[1]]),landoltia_rareplot_all[[1]], type="l")
-     lines(1:length(landoltia_rareplot_P10[[1]]),landoltia_rareplot_P10[[1]])
-     lines(1:length(landoltia_rareplot_P14[[1]]),landoltia_rareplot_P14[[1]])
-     lines(1:length(landoltia_rareplot_P19[[1]]),landoltia_rareplot_P19[[1]])
-     lines(1:length(landoltia_rareplot_P27[[1]]),landoltia_rareplot_P27[[1]])
-     lines(1:length(landoltia_rareplot_P36[[1]]),landoltia_rareplot_P36[[1]])
+     plot(1:length(landoltia_rareplot_all[[1]]),landoltia_rareplot_all[[1]], type="l",
+          xlab="sampled individuals", ylab="clones found", lwd=3, main="Landoltia")
+     lines(1:length(landoltia_rareplot_P10[[1]]),landoltia_rareplot_P10[[1]], col=P10_col, lwd=3)
+     lines(1:length(landoltia_rareplot_P14[[1]]),landoltia_rareplot_P14[[1]], col=P14_col, lwd=3)
+     lines(1:length(landoltia_rareplot_P19[[1]]),landoltia_rareplot_P19[[1]], col=P19_col, lwd=3)
+     lines(1:length(landoltia_rareplot_P27[[1]]),landoltia_rareplot_P27[[1]], col=P27_col, lwd=3)
+     lines(1:length(landoltia_rareplot_P36[[1]]),landoltia_rareplot_P36[[1]], col=P36_col, lwd=3)
      
      
      lemna_pond10 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P10")),c(which(substr(colnames(lemna_hamdist),1,3) == "P10"))]      
@@ -3188,41 +3158,163 @@
      lemna_rareplot_P27 = rarecurve(lemna_rarecurve_P27)
      lemna_rareplot_P36 = rarecurve(lemna_rarecurve_P36)
      
-     plot(1:length(lemna_rareplot_all[[1]]),lemna_rareplot_all[[1]], type="l")
-     plot(1:length(lemna_rareplot_P10[[1]]),lemna_rarecurve_all_P10[[1]], type="l", ylim=c(0,5), xlim=c(0,22))
-     lines(1:length(lemna_rareplot_P10[[1]]),lemna_rareplot_P10[[1]])
-     lines(1:length(lemna_rareplot_P14[[1]]),lemna_rareplot_P14[[1]])
-     lines(1:length(lemna_rareplot_P19[[1]]),lemna_rareplot_P19[[1]])
-     lines(1:length(lemna_rareplot_P27[[1]]),lemna_rareplot_P27[[1]])
-     lines(1:length(lemna_rareplot_P36[[1]]),lemna_rareplot_P36[[1]])
+     plot(1:length(lemna_rareplot_all[[1]]),lemna_rareplot_all[[1]], type="l",
+          xlab="sampled individuals", ylab="clones found", lwd=3, main="Lemna")
+     lines(1:length(lemna_rareplot_P10[[1]]),lemna_rareplot_P10[[1]], col=P10_col, lwd=3)
+     lines(1:length(lemna_rareplot_P14[[1]]),lemna_rareplot_P14[[1]], col=P14_col, lwd=3)
+     lines(1:length(lemna_rareplot_P19[[1]]),lemna_rareplot_P19[[1]], col=P19_col, lwd=3)
+     lines(1:length(lemna_rareplot_P27[[1]]),lemna_rareplot_P27[[1]], col=P27_col, lwd=3)
+     lines(1:length(lemna_rareplot_P36[[1]]),lemna_rareplot_P36[[1]], col=P36_col, lwd=3)
+     
+     landoltia_boxplotter = sapply(apply(landoltia_clone_df, 2, function(x) unique(na.omit(substr(x,1,3)))),length)
+     lemna_boxplotter = sapply(apply(lemna_clone_df, 2, function(x) unique(na.omit(substr(x,1,3)))),length)
+     
+     plot(1:length(lemna_boxplotter), rev(sort(lemna_boxplotter)),
+          xlab="clones", ylab="# of ponds each clone occurs in", pch=21, bg=landoltia_col, cex=1.5)
+     plot(1:length(landoltia_boxplotter), rev(sort(landoltia_boxplotter)),
+          xlab="clones", ylab="# of ponds each clone occurs in", pch=21, bg=lemna_col, cex=1.5)
      
      
      
-     sd
+     ## LANDOLTIA compute euclidean distance ####
      
-     ## manual hamming distance calculation ####
+     ## euclidean distance
+     landoltia_eucdist_raw = as.matrix(bitwise.dist(landoltia_final_genind, euclidean = TRUE))
      
-     ## replace homozygote, heterozygote, homozygote with 0,1,2
-     landoltia_final_genind = vcfR2genind(landoltia_final)
-     landoltia_genotypes_double = t(landoltia_final_genind@tab)
-     landoltia_genotypes = landoltia_genotypes_double[seq(1, nrow(landoltia_genotypes_double), by = 2), ]
+     ## order euclidean distance matrix
+     landoltia_eucdist_raw = landoltia_eucdist_raw[landoltia_ordered_names, landoltia_ordered_names]
      
-     ## create matrix for manual hamming distance calculation
-     landoltia_hamdist_raw = matrix(NA, nrow=ncol(landoltia_genotypes), ncol=ncol(landoltia_genotypes))
-     colnames(landoltia_hamdist_raw) = colnames(landoltia_genotypes)
-     rownames(landoltia_hamdist_raw) = colnames(landoltia_genotypes)
-     
-     ##  compute hamming distance
-     for (n in 1:ncol(landoltia_genotypes)) {
-       
-       ## compute hamming distance
-       runner_vec = apply(landoltia_genotypes, 2, function(x) sum(abs(landoltia_genotypes[,n] - x), na.rm=TRUE))
-       
-       ## store in matrix
-       landoltia_hamdist_raw[,n] = runner_vec
-       
-     }
+     ## scale by maximum distance
+     landoltia_eucdist = round(landoltia_eucdist_raw/(sqrt((nrow(landoltia_final@fix)*4))),5)
      
      
+     ## LEMNA compute euclidean distance ####
      
+     ## euclidean distance
+     lemna_eucdist_raw = as.matrix(bitwise.dist(lemna_final_genind, euclidean = TRUE))
+     
+     ## order euclidean distance matrix
+     lemna_eucdist_raw = lemna_eucdist_raw[lemna_ordered_names, lemna_ordered_names]
+     
+     ## scale by maximum distance
+     lemna_eucdist = round(lemna_eucdist_raw/(sqrt((nrow(lemna_final@fix)*4))),5)
+     
+     
+     ## 4x4 PCAs ####
+     
+     
+     
+     ## ade4::dudi.pca()
+     par(mfrow=c(2,2))
+     
+     ## Landoltia with clones 
+     dudipca_result = dudi.pca(landoltia_clone_no_missing_data, scannf = FALSE, nf = 3)
+     plot(dudipca_result$li[,1], dudipca_result$li[,2], 
+          xlim=c(-12,60), ylim=c(-35,15),
+          xlab = paste0("PC1 (", round((dudipca_result$eig[1] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+          ylab = paste0("PC2 (", round((dudipca_result$eig[2] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+          main = "landoltia with clones (ade4)", pch = 21, 
+          bg = ifelse(grepl("P10", rownames(dudipca_result$li)), P10_col,
+                      ifelse(grepl("P14", rownames(dudipca_result$li)), P14_col, 
+                             ifelse(grepl("P19", rownames(dudipca_result$li)), P19_col,
+                                    ifelse(grepl("P27", rownames(dudipca_result$li)), P27_col,
+                                           ifelse(grepl("P36", rownames(dudipca_result$li)), P36_col, rest_col))))))
+     text(dudipca_result$li[,1], dudipca_result$li[,2],
+          labels=rownames(dudipca_result$li), cex=0.5, pos=sample(1:4,nrow(dudipca_result$li), replace=TRUE),
+          col="gray30")
+     legend("bottomright", legend=c("P10","P14", "P19", "P27", "P36", "other"),
+            pt.bg=c(P10_col,P14_col, P19_col, P27_col, P36_col, rest_col),
+            pch=21, bty="n")
+     
+     ## landoltia without clones
+     dudipca_result = dudi.pca(landoltia_no_clone_no_missing_data, scannf = FALSE, nf = 3)
+     plot(dudipca_result$li[,1], dudipca_result$li[,2],
+          xlab = paste0("PC1 (", round((dudipca_result$eig[1] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+          ylab = paste0("PC2 (", round((dudipca_result$eig[2] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+          main = "landoltia no clones (ade4)", pch = 21, 
+          bg = ifelse(grepl("P10", rownames(dudipca_result$li)), P10_col,
+                      ifelse(grepl("P14", rownames(dudipca_result$li)), P14_col, 
+                             ifelse(grepl("P19", rownames(dudipca_result$li)), P19_col,
+                                    ifelse(grepl("P27", rownames(dudipca_result$li)), P27_col,
+                                           ifelse(grepl("P36", rownames(dudipca_result$li)), P36_col, rest_col))))))
+     
+     ## Lemna with clones
+     dudipca_result = dudi.pca(lemna_clone_no_missing_data, scannf = FALSE, nf = 3)
+     plot(dudipca_result$li[,1], dudipca_result$li[,2], 
+          xlab = paste0("PC1 (", round((dudipca_result$eig[1] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+          ylab = paste0("PC2 (", round((dudipca_result$eig[2] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+          main = "lemna with clones (ade4)", pch = 21, 
+          bg = ifelse(grepl("P10", rownames(dudipca_result$li)), P10_col,
+                      ifelse(grepl("P14", rownames(dudipca_result$li)), P14_col, 
+                             ifelse(grepl("P19", rownames(dudipca_result$li)), P19_col,
+                                    ifelse(grepl("P27", rownames(dudipca_result$li)), P27_col,
+                                           ifelse(grepl("P36", rownames(dudipca_result$li)), P36_col, rest_col))))))
+     
+     ## lemna without clones
+     dudipca_result = dudi.pca(lemna_no_clone_no_missing_data, scannf = FALSE, nf = 3)
+     plot(dudipca_result$li[,1], dudipca_result$li[,2], 
+          xlab = paste0("PC1 (", round((dudipca_result$eig[1] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+          ylab = paste0("PC2 (", round((dudipca_result$eig[2] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
+          main = "lemna no clones (ade4)", pch = 21, 
+          bg = ifelse(grepl("P10", rownames(dudipca_result$li)), P10_col,
+                      ifelse(grepl("P14", rownames(dudipca_result$li)), P14_col, 
+                             ifelse(grepl("P19", rownames(dudipca_result$li)), P19_col,
+                                    ifelse(grepl("P27", rownames(dudipca_result$li)), P27_col,
+                                           ifelse(grepl("P36", rownames(dudipca_result$li)), P36_col, rest_col))))))
+     
+     
+     
+     ## adegenet::glPca()
+     par(mfrow=c(2,2))
+     
+     ## landoltia with clones
+     glpca_result = glPca(landoltia_final_pca, nf=3)
+     plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
+          xlab = paste0("PC1 (", round((glpca_result$eig[1] / sum(glpca_result$eig)) * 100,2),"%)", sep=""), 
+          ylab = paste0("PC1 (", round((glpca_result$eig[2] / sum(glpca_result$eig)) * 100,2),"%)", sep=""),
+          main = "Landoltia with clones (adegenet)", pch = 21, 
+          bg = ifelse(grepl("P10", rownames(glpca_result$scores)), P10_col,
+                      ifelse(grepl("P14", rownames(glpca_result$scores)), P14_col, 
+                             ifelse(grepl("P19", rownames(glpca_result$scores)), P19_col,
+                                    ifelse(grepl("P27", rownames(glpca_result$scores)), P27_col,
+                                           ifelse(grepl("P36", rownames(glpca_result$scores)), P36_col, rest_col))))))
+     legend("topleft", legend=c("P10","P14", "P19", "P27", "P36", "other"),
+            pt.bg=c(P10_col,P14_col, P19_col, P27_col, P36_col, rest_col),
+            pch=21, bty="n")
+     
+     ## landoltia no clones
+     glpca_result = glPca(landoltia_final_no_clone_pca, nf=3)
+     plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
+          xlab = paste0("PC1 (", round((glpca_result$eig[1] / sum(glpca_result$eig)) * 100,2),"%)", sep=""), 
+          ylab = paste0("PC1 (", round((glpca_result$eig[2] / sum(glpca_result$eig)) * 100,2),"%)", sep=""),
+          main = "Landoltia no clones (adegenet)", pch = 21, 
+          bg = ifelse(grepl("P10", rownames(glpca_result$scores)), P10_col,
+                      ifelse(grepl("P14", rownames(glpca_result$scores)), P14_col, 
+                             ifelse(grepl("P19", rownames(glpca_result$scores)), P19_col,
+                                    ifelse(grepl("P27", rownames(glpca_result$scores)), P27_col,
+                                           ifelse(grepl("P36", rownames(glpca_result$scores)), P36_col, rest_col))))))
+     
+     ## lemna with clones
+     glpca_result = glPca(lemna_final_pca, nf=3)
+     plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
+          xlab = paste0("PC1 (", round((glpca_result$eig[1] / sum(glpca_result$eig)) * 100,2),"%)", sep=""), 
+          ylab = paste0("PC1 (", round((glpca_result$eig[2] / sum(glpca_result$eig)) * 100,2),"%)", sep=""),
+          main = "lemna with clones (adegenet)", pch = 21, 
+          bg = ifelse(grepl("P10", rownames(glpca_result$scores)), P10_col,
+                      ifelse(grepl("P14", rownames(glpca_result$scores)), P14_col, 
+                             ifelse(grepl("P19", rownames(glpca_result$scores)), P19_col,
+                                    ifelse(grepl("P27", rownames(glpca_result$scores)), P27_col,
+                                           ifelse(grepl("P36", rownames(glpca_result$scores)), P36_col, rest_col))))))
+     
+     ## lemna no clones
+     glpca_result = glPca(lemna_final_no_clone_pca, nf=3)
+     plot(glpca_result$scores[,"PC1"], glpca_result$scores[,"PC2"],
+          xlab = paste0("PC1 (", round((glpca_result$eig[1] / sum(glpca_result$eig)) * 100,2),"%)", sep=""), 
+          ylab = paste0("PC1 (", round((glpca_result$eig[2] / sum(glpca_result$eig)) * 100,2),"%)", sep=""),
+          main = "lemna no clones (adegenet)", pch = 21, 
+          bg = ifelse(grepl("P10", rownames(glpca_result$scores)), P10_col,
+                      ifelse(grepl("P14", rownames(glpca_result$scores)), P14_col, 
+                             ifelse(grepl("P19", rownames(glpca_result$scores)), P19_col,
+                                    ifelse(grepl("P27", rownames(glpca_result$scores)), P27_col,
+                                           ifelse(grepl("P36", rownames(glpca_result$scores)), P36_col, rest_col))))))
      
