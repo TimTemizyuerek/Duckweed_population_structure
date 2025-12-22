@@ -1168,9 +1168,9 @@
      all_coordinates$latitude = sapply(all_coordinates[,"GPS_S"], convert_dmm_to_dd)
      all_coordinates$longitude = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
      
-     ## assemble plot
-     
-     par(mfrow=c(1,2))
+     ## assemble plotting window
+     split.screen(rbind(c(0, 0.5, 0, 1), 
+                        c(0.5, 1, 0, 1)))
      
      ## LANDOLTIA
      
@@ -1185,20 +1185,27 @@
        landoltia_hamdist_vector = landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]
        landoltia_geodist_vector = landoltia_geodist[lower.tri(landoltia_geodist, diag=FALSE)]
        
-       # replace 0 values, for log transform
-       landoltia_geodist_vector[which(landoltia_geodist_vector==0)] = 1
+       ## convert to km
+       landoltia_geodist_vector = landoltia_geodist_vector/1000
        
        ## assemble plot
-       plot(log(landoltia_geodist_vector), landoltia_hamdist_vector,
-            pch=21, bg="purple", cex=0.8, ylim=c(-0.01,max(c(lemna_hamdist,landoltia_hamdist))),
-            xlab="Geographic distance log(m)", 
+       screen(1)
+       par(mar=c(4,4,2,0.2))
+       plot(landoltia_geodist_vector, landoltia_hamdist_vector,
+            pch=21, bg=landoltia_col, cex=0.6, ylim=c(-0.01,max(c(lemna_hamdist,landoltia_hamdist))),
+            xlab="Geographic distance km", 
             ylab="Genetic distance")
-       abline(lm(landoltia_hamdist_vector ~ log(landoltia_geodist_vector)), lwd=5, col="red")
-       abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
-       abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
-       abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
-       abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
-       abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
+       lines(x = c(min(landoltia_geodist_vector), max(landoltia_geodist_vector)),
+             y = c(mean(landoltia_hamdist_vector), mean(landoltia_hamdist_vector)), lwd=2)
+       clip(min(landoltia_geodist_vector), max(landoltia_geodist_vector),0,0.8)
+       abline(h=0.02, lty=3, lwd=2)
+       abline(lm(landoltia_hamdist_vector ~ landoltia_geodist_vector), col="red", lwd=2)
+       
+       ## legend
+       usr = par("usr"); clip(usr[1], usr[2], usr[3], usr[4])
+       legend("topleft", inset=0.02, legend=c("mean", "model", "clone cutoff"),
+              lty=c(1,1,3), col=c("black", "red", "black"), lwd=c(2,2,2))
+       close.screen(1)
        
      ## LEMNA
        
@@ -1213,21 +1220,22 @@
        lemna_hamdist_vector = lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]
        lemna_geodist_vector = lemna_geodist[lower.tri(lemna_geodist, diag=FALSE)]
        
-       # replace 0 values, for log transform
-       lemna_geodist_vector[which(lemna_geodist_vector==0)] = 1
+       ## transform to km
+       lemna_geodist_vector = lemna_geodist_vector/1000
        
        ## assemble plot
-       plot(log(lemna_geodist_vector), lemna_hamdist_vector,
-            pch=21, bg="darkgreen", cex=0.8, ylim=c(-0.01,max(c(lemna_hamdist, landoltia_hamdist))),
-            xlab="Geographic distance log(m)", 
-            ylab="Genetic distance")
-       abline(lm(lemna_hamdist_vector ~ log(lemna_geodist_vector)), lwd=5, col="red")
-       abline(v=log(10), lty=2); text(log(10), -0.01, label="10m")
-       abline(v=log(100), lty=2); text(log(100), -0.01, label="100m")
-       abline(v=log(1000), lty=2); text(log(1000), -0.01, label="1km")
-       abline(v=log(10000), lty=2); text(log(10000), -0.01, label="10km")
-       abline(v=log(100000), lty=2); text(log(100000), -0.01, label="100km")
-
+       screen(2)
+       par(mar=c(4,0.2,2,4))
+       plot(lemna_geodist_vector, lemna_hamdist_vector,
+            pch=21, bg=lemna_col, cex=0.6, ylim=c(-0.01,max(c(lemna_hamdist,lemna_hamdist))),
+            xlab="Geographic distance km", ylab="", yaxt = "n")
+       lines(x = c(min(lemna_geodist_vector), max(lemna_geodist_vector)),
+             y = c(mean(lemna_hamdist_vector), mean(lemna_hamdist_vector)), lwd=2)
+       clip(min(lemna_geodist_vector), max(lemna_geodist_vector),0,0.8)
+       abline(h=0.02, lty=3, lwd=2)
+       abline(lm(lemna_hamdist_vector ~ lemna_geodist_vector), col="red", lwd=2)
+       close.screen(2)
+       
      ## Mantel tests
      
      ## LANDOLTIA
@@ -1474,6 +1482,72 @@
      
      
 ## scraps ####
+     ## subsetting alive ####
+     
+     landoltia_alive = c("P13S1", 
+                         "P14S7",
+                         "P14S16", 
+                         "P14S42", 
+                         "P14S22", 
+                         "P19S36",
+                         "P19S16", 
+                         "P19S52", 
+                         "P27S13",
+                         "P27S3",
+                         "P28S3", 
+                         "P36S1", 
+                         "P36S41", 
+                         "P36S34",
+                         "P11S12", 
+                         "P12S4", 
+                         "P12S5", 
+                         "P12S6", 
+                         "P14S18",
+                         "P19S11", 
+                         "P19S23", 
+                         "P19S34", 
+                         "P19S54", 
+                         "P23S4",
+                         "P23S5", 
+                         "P25S1", 
+                         "P26S1", 
+                         "P26S3")
+     
+     lemna_alive = c("P7S2",
+                     "P10S28",
+                     "P33S3",
+                     "P11S8",
+                     "P19S30",
+                     "P27S4",
+                     "P32S5",
+                     "P14S43")
+       
+     landoltia_alive_hamdist = landoltia_hamdist[which(colnames(landoltia_hamdist) %in% landoltia_alive),which(colnames(landoltia_hamdist) %in% landoltia_alive)]
+     lemna_alive_hamdist = lemna_hamdist[which(colnames(lemna_hamdist) %in% lemna_alive),which(colnames(lemna_hamdist) %in% lemna_alive)]
+     
+     write.csv(lemna_alive_hamdist, file="lemna_alive.csv")
+     write.csv(landoltia_alive_hamdist, file="landoltia_alive.csv")
+     
+     ## plot landoltia
+     col_pal = colorRampPalette(c(landoltia_col, "white"))
+     colbreaks = 10
+     clone_cutoff = 0.02
+     image(1:ncol(landoltia_alive_hamdist), 1:nrow(landoltia_alive_hamdist),
+           landoltia_alive_hamdist, axes = FALSE, frame=FALSE, xlab="", ylab="",
+           col=c("black",col_pal(colbreaks-2)), main="Landoltia",
+           breaks=c(0,seq(from=clone_cutoff, to=max(c(landoltia_hamdist,lemna_hamdist)), length.out = colbreaks-1)))
+     mtext(colnames(landoltia_alive_hamdist), side=1, at=1:length(landoltia_alive), las=2)
+     mtext(colnames(landoltia_alive_hamdist), side=2, at=1:length(landoltia_alive), las=2)
+     
+     ## lemna
+     col_pal = colorRampPalette(c(lemna_col, "white"))
+     image(1:ncol(lemna_alive_hamdist), 1:nrow(lemna_alive_hamdist),
+           lemna_alive_hamdist, axes = FALSE, frame=FALSE, xlab="", ylab="",
+           col=c("black",col_pal(colbreaks-2)), main="Lemna",
+           breaks=c(0,seq(from=clone_cutoff, to=max(c(lemna_hamdist,lemna_hamdist)), length.out = colbreaks-1)))
+     mtext(colnames(lemna_alive_hamdist), side=1, at=1:length(lemna_alive), las=2)
+     mtext(colnames(lemna_alive_hamdist), side=2, at=1:length(lemna_alive), las=2)
+     
      ## landoltia compute geographical distance heatmap ####
      
      
