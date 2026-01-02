@@ -63,8 +63,16 @@
        ## transform hamdist to rarecurve format
        for (n in 1:length(clone_list)) {hamdist_subset[1,n] = length(clone_list[[n]])}
        out_rarecurve = hamdist_subset[1,,drop=FALSE]
+       rownames(out_rarecurve) = "abundance"
        
        return(out_rarecurve)
+     }
+     
+     ## helper function to calculate boot strap confidence intervals for diversity estimates. 
+     diversity_stat <- function(data, indices) {
+       resampled <- data[indices]
+       counts_boot <- tabulate(resampled, nbins = length(unique(data)))
+       vegan::diversity(counts_boot, index = "simpson")
      }
      
 ## FILTERING and DISTANCE CALCULATION ####
@@ -210,6 +218,9 @@
      
      ## order hamming distance matrix
      landoltia_hamdist_raw = landoltia_hamdist_raw[landoltia_ordered_names, landoltia_ordered_names]
+     
+     ## rename P1S2 to P2S1 to reflect that place 1 & 2 are actually connected
+     colnames(landoltia_hamdist_raw)[1] = "P2S1"; rownames(landoltia_hamdist_raw)[1] = "P2S1"
      
      ## scale by maximum distance
      landoltia_hamdist = round(landoltia_hamdist_raw/(nrow(landoltia_final@fix)*2),3)
@@ -512,6 +523,16 @@
      
      ## Numbers for M&M ####
      
+     ## population level diversity
+     diversity(hamdist_to_rarecurve(landoltia_hamdist))
+     diversity(hamdist_to_rarecurve(lemna_hamdist))
+     
+     mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])
+     mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])
+     
+     sd(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)])
+     sd(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)])
+     
      ## Observed heterozygosity, expected heretozygostiy and inbreeding coefficient (FIS)
      
      ## LANDOLTIA
@@ -638,6 +659,9 @@
      nrow(sampling_data)
      
      ## MAP ####
+     
+     ## number of waterbodies
+     length(unique(c(substr(colnames(landoltia_hamdist),1,3), substr(colnames(lemna_hamdist),1,3))))
      
      ## read and transform coordinates
      all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
@@ -941,6 +965,7 @@
      
      ## number of iterations
      iter = 100000
+     boot_iter = 100000
      
      ## set screens
      split.screen(rbind(c(0, 0.55, 0.5, 1), 
@@ -968,34 +993,92 @@
            runner_matrix = landoltia_hamdist[runner_sample,runner_sample]
            landoltia_perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
            landoltia_perm_clone[n] = ncol(hamdist_to_rarecurve(runner_matrix))
-           landoltia_perm_diversity[n] = diversity(hamdist_to_rarecurve(runner_matrix))
+           landoltia_perm_diversity[n] = diversity(hamdist_to_rarecurve(runner_matrix), index = "simpson")
          }
          
          ## mean plot
          par(mar=c(0.3,4.5,0.3,0.3))
          screen(1)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", ylab="Genetic distance", las=2)
-         points(1, mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]), pch=21, bg=landoltia_col, cex=2)
-         points(2, mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]), pch=21, bg=landoltia_col, cex=2)
-         points(3, mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]), pch=21, bg=landoltia_col, cex=2)
-         points(4, mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]), pch=21, bg=landoltia_col, cex=2)
-         points(5, mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]), pch=21, bg=landoltia_col, cex=2)
-         points(rep(6,iter), landoltia_perm_mean, pch=21, bg=landoltia_col, cex=2)
-         abline(h=quantile(landoltia_perm_mean, probs = c(0.001, 0.999)), lty=2, lwd=2)
+         ## base plot
+         plot(NULL, xlim=c(0.5,7.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", ylab="Genetic distance", las=2)
+         ## mean + confidence interval of population
+         boot_means <- replicate(boot_iter, mean(sample(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 7, y0 = ci[1], x1 = 7, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(7, mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), pch=21, bg=landoltia_col, cex=1.5)
+         abline(v=6.5)
+         ## means + confidence intervals of the deep sampled ponds
+         boot_means <- replicate(boot_iter, mean(sample(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 1, y0 = ci[1], x1 = 1, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(1, mean(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)]), pch=21, bg=landoltia_col, cex=1.5)
+         boot_means <- replicate(boot_iter, mean(sample(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 2, y0 = ci[1], x1 = 2, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(2, mean(landoltia_p14[lower.tri(landoltia_p14, diag=FALSE)]), pch=21, bg=landoltia_col, cex=1.5)
+         boot_means <- replicate(boot_iter, mean(sample(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 3, y0 = ci[1], x1 = 3, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(3, mean(landoltia_p19[lower.tri(landoltia_p19, diag=FALSE)]), pch=21, bg=landoltia_col, cex=1.5)
+         boot_means <- replicate(boot_iter, mean(sample(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 4, y0 = ci[1], x1 = 4, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(4, mean(landoltia_p27[lower.tri(landoltia_p27, diag=FALSE)]), pch=21, bg=landoltia_col, cex=1.5)
+         boot_means <- replicate(boot_iter, mean(sample(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 5, y0 = ci[1], x1 = 5, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(5, mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]), pch=21, bg=landoltia_col, cex=1.5)
+         ## permutation results
+         clip(0,6,0,0.3)
+         abline(h=quantile(landoltia_perm_mean, probs = c(0.025, 0.975)), lty=2, lwd=1)
+         clip(0,6.5,0,0.3)
+         points(rep(6,iter), landoltia_perm_mean, pch=21, bg=landoltia_col, cex=1.5)
          close.screen(1)
          
          ## diversity plot
          par(mar=c(3,4.5,0.3,0.3))
          screen(2)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(-0.1,3.3), xlab="", main="", xaxt = "n", ylab="Diversity (Shannon)", las=2)
-         axis(1, at = 1:6, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm"))
-         points(1, diversity(hamdist_to_rarecurve(landoltia_p10)),pch=21, bg=landoltia_col, cex=2)
-         points(2, diversity(hamdist_to_rarecurve(landoltia_p14)),pch=21, bg=landoltia_col, cex=2)
-         points(3, diversity(hamdist_to_rarecurve(landoltia_p19)),pch=21, bg=landoltia_col, cex=2)
-         points(4, diversity(hamdist_to_rarecurve(landoltia_p27)),pch=21, bg=landoltia_col, cex=2)
-         points(5, diversity(hamdist_to_rarecurve(landoltia_p36)),pch=21, bg=landoltia_col, cex=2)
-         points(rep(6,iter), landoltia_perm_diversity, pch=21, bg=landoltia_col, cex=2)
-         abline(h=quantile(landoltia_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=2)
+         ## base plot
+         plot(NULL, xlim=c(0.5,7.5), ylim=c(0,1.05), xlab="", main="", xaxt = "n", ylab="Diversity (Simpson)", las=2)
+         axis(1, at = 1:7, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm", "pop"))
+         ## plot diversity and CI for population
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(landoltia_hamdist)), hamdist_to_rarecurve(landoltia_hamdist))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 7, y0 = ci[1], x1 = 7, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(7, diversity(hamdist_to_rarecurve(landoltia_hamdist), index = "simpson"), pch=21, bg=landoltia_col, cex=1.5)
+         abline(v=6.5)
+         ## plot diversity and CI for deep sampled ponds
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(landoltia_p10)), hamdist_to_rarecurve(landoltia_p10))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 1, y0 = ci[1], x1 = 1, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(1, diversity(hamdist_to_rarecurve(landoltia_p10), index = "simpson"), pch=21, bg=landoltia_col, cex=1.5)
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(landoltia_p14)), hamdist_to_rarecurve(landoltia_p14))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 2, y0 = ci[1], x1 = 2, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(2, diversity(hamdist_to_rarecurve(landoltia_p14), index = "simpson"), pch=21, bg=landoltia_col, cex=1.5)
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(landoltia_p19)), hamdist_to_rarecurve(landoltia_p19))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 3, y0 = ci[1], x1 = 3, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(3, diversity(hamdist_to_rarecurve(landoltia_p19), index = "simpson"), pch=21, bg=landoltia_col, cex=1.5)
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(landoltia_p27)), hamdist_to_rarecurve(landoltia_p27))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 4, y0 = ci[1], x1 = 4, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(4, diversity(hamdist_to_rarecurve(landoltia_p27), index = "simpson"), pch=21, bg=landoltia_col, cex=1.5)
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(landoltia_p36)), hamdist_to_rarecurve(landoltia_p36))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 5, y0 = ci[1], x1 = 5, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(5, diversity(hamdist_to_rarecurve(landoltia_p36), index = "simpson"), pch=21, bg=landoltia_col, cex=1.5)
+         ## permutations
+         clip(0,6,0,4)
+         abline(h=quantile(landoltia_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=1)
+         clip(0,6.5,0,4)
+         points(rep(6,iter), landoltia_perm_diversity, pch=21, bg=landoltia_col, cex=1.5)
          close.screen(2)
          
      ## LEMNA
@@ -1018,34 +1101,92 @@
            runner_matrix = lemna_hamdist[runner_sample,runner_sample]
            lemna_perm_mean[n] = mean(runner_matrix[lower.tri(runner_matrix, diag=FALSE)])
            lemna_perm_clone[n] = ncol(hamdist_to_rarecurve(runner_matrix))
-           lemna_perm_diversity[n] = diversity(hamdist_to_rarecurve(runner_matrix))
+           lemna_perm_diversity[n] = diversity(hamdist_to_rarecurve(runner_matrix), index="simpson")
          }
          
          ## mean plot
          par(mar=c(0.3,0.3,0.3,0.3))
          screen(3)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", yaxt="n", ylab="Genetic distance", las=2)
-         points(1, mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]), pch=21, bg=lemna_col, cex=2)
-         points(2, mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]), pch=21, bg=lemna_col, cex=2)
-         points(3, mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]), pch=21, bg=lemna_col, cex=2)
-         points(4, mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]), pch=21, bg=lemna_col, cex=2)
-         points(5, mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]), pch=21, bg=lemna_col, cex=2)
-         points(rep(6,iter), lemna_perm_mean, pch=21, bg=lemna_col, cex=2)
-         abline(h=quantile(lemna_perm_mean, probs = c(0.001, 0.999)), lty=2, lwd=2)
+         ## base plot
+         plot(NULL, xlim=c(0.5,7.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", yaxt="n", ylab="Genetic distance", las=2)
+         ## mean + confidence interval of population
+         boot_means <- replicate(boot_iter, mean(sample(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 7, y0 = ci[1], x1 = 7, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(7, mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]), pch=21, bg=lemna_col, cex=1.5)
+         abline(v=6.5)
+         ## means + confidence intervals of the deep sampled ponds
+         boot_means <- replicate(boot_iter, mean(sample(lemna_p10[lower.tri(lemna_p10, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 1, y0 = ci[1], x1 = 1, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(1, mean(lemna_p10[lower.tri(lemna_p10, diag=FALSE)]), pch=21, bg=lemna_col, cex=1.5)
+         boot_means <- replicate(boot_iter, mean(sample(lemna_p14[lower.tri(lemna_p14, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 2, y0 = ci[1], x1 = 2, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(2, mean(lemna_p14[lower.tri(lemna_p14, diag=FALSE)]), pch=21, bg=lemna_col, cex=1.5)
+         boot_means <- replicate(boot_iter, mean(sample(lemna_p19[lower.tri(lemna_p19, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 3, y0 = ci[1], x1 = 3, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(3, mean(lemna_p19[lower.tri(lemna_p19, diag=FALSE)]), pch=21, bg=lemna_col, cex=1.5)
+         boot_means <- replicate(boot_iter, mean(sample(lemna_p27[lower.tri(lemna_p27, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 4, y0 = ci[1], x1 = 4, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(4, mean(lemna_p27[lower.tri(lemna_p27, diag=FALSE)]), pch=21, bg=lemna_col, cex=1.5)
+         boot_means <- replicate(boot_iter, mean(sample(lemna_p36[lower.tri(lemna_p36, diag=FALSE)], replace = TRUE)))
+         ci = quantile(boot_means, c(0.025, 0.975))
+         arrows(x0 = 5, y0 = ci[1], x1 = 5, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(5, mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]), pch=21, bg=lemna_col, cex=1.5)
+         ## permutation results
+         clip(0,6,0,0.3)
+         abline(h=quantile(lemna_perm_mean, probs = c(0.025, 0.975)), lty=2, lwd=1)
+         clip(0,6.5,0,0.3)
+         points(rep(6,iter), lemna_perm_mean, pch=21, bg=lemna_col, cex=1.5)
          close.screen(3)
          
          ## diversity plot
          par(mar=c(3,0.3,0.3,0.3))
          screen(4)
-         plot(NULL, xlim=c(0.5,6.5), ylim=c(-0.1,3.3), xlab="", main="", xaxt = "n",  yaxt="n", ylab="Diversity (Shannon)", las=2)
-         axis(1, at = 1:6, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm"))
-         points(1, diversity(hamdist_to_rarecurve(lemna_p10)),pch=21, bg=lemna_col, cex=2)
-         points(2, diversity(hamdist_to_rarecurve(lemna_p14)),pch=21, bg=lemna_col, cex=2)
-         points(3, diversity(hamdist_to_rarecurve(lemna_p19)),pch=21, bg=lemna_col, cex=2)
-         points(4, diversity(hamdist_to_rarecurve(lemna_p27)),pch=21, bg=lemna_col, cex=2)
-         points(5, diversity(hamdist_to_rarecurve(lemna_p36)),pch=21, bg=lemna_col, cex=2)
-         points(rep(6,iter), lemna_perm_diversity, pch=21, bg=lemna_col, cex=2)
-         abline(h=quantile(lemna_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=2)
+         ## base plot
+         plot(NULL, xlim=c(0.5,7.5), ylim=c(0,1.05), xlab="", main="", xaxt = "n", yaxt = "n", ylab="Diversity (Shannon)", las=2)
+         axis(1, at = 1:7, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm", "pop"))
+         ## plot diversity and CI for population
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(lemna_hamdist)), hamdist_to_rarecurve(lemna_hamdist))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 7, y0 = ci[1], x1 = 7, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(7, diversity(hamdist_to_rarecurve(lemna_hamdist), index = "simpson"), pch=21, bg=lemna_col, cex=1.5)
+         abline(v=6.5)
+         ## plot diversity and CI for deep sampled ponds
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(lemna_p10)), hamdist_to_rarecurve(lemna_p10))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 1, y0 = ci[1], x1 = 1, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(1, diversity(hamdist_to_rarecurve(lemna_p10), index = "simpson"), pch=21, bg=lemna_col, cex=1.5)
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(lemna_p14)), hamdist_to_rarecurve(lemna_p14))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 2, y0 = ci[1], x1 = 2, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(2, diversity(hamdist_to_rarecurve(lemna_p14), index = "simpson"), pch=21, bg=lemna_col, cex=1.5)
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(lemna_p19)), hamdist_to_rarecurve(lemna_p19))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 3, y0 = ci[1], x1 = 3, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(3, diversity(hamdist_to_rarecurve(lemna_p19), index = "simpson"), pch=21, bg=lemna_col, cex=1.5)
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(lemna_p27)), hamdist_to_rarecurve(lemna_p27))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 4, y0 = ci[1], x1 = 4, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(4, diversity(hamdist_to_rarecurve(lemna_p27), index = "simpson"), pch=21, bg=lemna_col, cex=1.5)
+         data_individuals = rep(seq_along(hamdist_to_rarecurve(lemna_p36)), hamdist_to_rarecurve(lemna_p36))
+         boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
+         ci = quantile(boot_out$t, c(0.025, 0.975))
+         arrows(x0 = 5, y0 = ci[1], x1 = 5, y1 = ci[2], angle = 90, code = 3, length = 0.05)
+         points(5, diversity(hamdist_to_rarecurve(lemna_p36), index = "simpson"), pch=21, bg=lemna_col, cex=1.5)
+         ## permutations
+         clip(0,6,0,4)
+         abline(h=quantile(lemna_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=1)
+         clip(0,6.5,0,4)
+         points(rep(6,iter), lemna_perm_diversity, pch=21, bg=lemna_col, cex=1.5)
          close.screen(4)
          
          
