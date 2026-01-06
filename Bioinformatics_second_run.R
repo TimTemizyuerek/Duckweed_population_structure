@@ -733,22 +733,29 @@
      is_saltwater = lengths(st_intersects(brisbane_waterbodies, coast_buffer)) > 0
      brisbane_saltwater = brisbane_waterbodies[is_saltwater, ]
      brisbane_freshwater = brisbane_waterbodies[!is_saltwater, ]
-      
-     ## assemble piechart plot
-            
+     
+     ## set up plotting area
+     
+         split.screen(rbind(c(0,1,0,1),
+                            c(0.1,0.35,0.59,0.815)))  
+         
+     ## plot background map
+     
          ## these are criminal adjustments, but I seem to need them ... 
          xmin = min(all_coordinates[,"longitude"])-0.01
          xmax = max(all_coordinates[,"longitude"])+0.05
          ymin = -max(all_coordinates[,"latitude"])-0.05
          ymax = -min(all_coordinates[,"latitude"])+0.05
-        
-         par(mar=c(2,2,2,2))
+         
+         ## assemble plot
+         screen(1)
+         par(mar=c(2,2.2,0.1,0.1))
          plot(st_geometry(brisbane_freshwater), col = "dodgerblue", border = NA)
          plot(st_geometry(brisbane_saltwater), col = "white", border = NA, add = TRUE)
          plot(st_geometry(brisbane_coastline), col = "black", lwd = 1, add = TRUE)
          rect(xmin, ymin, xmax, ymax,
               col=scales::alpha("white", 0.25), border="black", lwd=1)
-          
+         
          ## manual x-axis
          xticks = round(seq(from=xmin, to=xmax-0.02, length.out = 5),2)
          segments(xticks, ymin, xticks, ymin-(ymax-ymin)*0.01)
@@ -756,7 +763,7 @@
          
          ## manual y-axis 
          yticks = round(seq(from=ymin, to=ymax, length.out = 5),2)
-         segments(xmin, yticks, xmin-(xmax-xmin)*0.01, yticks)
+         segments(xmin, yticks, xmin-(xmax-xmin)*0.005, yticks)
          mtext(side = 2, at = yticks, text = yticks, las = 1, line = -0.5)
          
          ## extract waterbody data
@@ -784,13 +791,78 @@
          
          ## transform total for scaling in plot
          waterbody_map$scaled_total = 0.01 + (0.04*(waterbody_map[,"total"]-1))/51
-        
+         
+         ## reorder so that the large piecharts are plotted first
+         waterbody_map = waterbody_map[c(1,5,10,19,28,
+                                         2,3,4,
+                                         6,7,8,9,
+                                         11,12,13,14,15,16,17,18,
+                                         20,21,22,23,24,25,26,27,
+                                         29,30,31,32),]
+         
          ## add piecharts
          for (n in 1:nrow(waterbody_map)) {
            floating.pie(xpos=waterbody_map[,"lat"][n], ypos=-waterbody_map[,"long"][n], 
                         x=c(waterbody_map[,4][n], waterbody_map[,5][n]), radius=waterbody_map[,"scaled_total"][n],
-                        col=c(landoltia_col, lemna_col))
+                        col=c(landoltia_col, lemna_col),
+                        edges=1000)
          }
+         close.screen(1)
+         
+     ## plot P10 inlet
+     
+         ## find micro sites
+         P10_microsite_plotter = data.frame(matrix(0, ncol=6,nrow = 0))
+         P10_microsites = micro_sites[which(substr(micro_sites[,"samples"],1,3) == "P10"),]
+         m=0; for (n in unique(P10_microsites[,"micro_site_ID"])){
+           
+           m=m+1
+           
+           ## extract average coordinates
+           runner_waterbody_site = P10_microsites[which(P10_microsites[,"micro_site_ID"] == n),]
+           runner_coor = all_coordinates[which(all_coordinates[,"ID"] %in% runner_waterbody_site[,"samples"]),]
+           
+           P10_microsite_plotter[m,1] = n
+           P10_microsite_plotter[m,2] = mean(runner_coor[,"latitude"])
+           P10_microsite_plotter[m,3] = mean(runner_coor[,"longitude"])
+           P10_microsite_plotter[m,4] = length(which(substr(runner_coor[,"species"],1,2) == "Le"))
+           P10_microsite_plotter[m,5] = length(which(substr(runner_coor[,"species"],1,2) == "La"))
+           P10_microsite_plotter[m,6] = P10_microsite_plotter[m,4] + P10_microsite_plotter[m,5]
+           
+         }
+         colnames(P10_microsite_plotter) = c("micro","long", "lat", "lemna", "landoltia", "total")    
+         P10_microsite_plotter[,"long"] = as.numeric(P10_microsite_plotter[,"long"]);P10_microsite_plotter[,"lat"] = as.numeric(P10_microsite_plotter[,"lat"])
+         P10_microsite_plotter[,"lemna"] = as.numeric(P10_microsite_plotter[,"lemna"]);P10_microsite_plotter[,"landoltia"] = as.numeric(P10_microsite_plotter[,"landoltia"])
+         P10_microsite_plotter[,"total"] = as.numeric(P10_microsite_plotter[,"total"])
+         
+         ## extract P10 samples
+         P10_coordinates = all_coordinates[which(substr(all_coordinates[,"ID"],1,3) == "P10"),]
+         
+         ## cut shapefile
+         P10_shapefile = st_crop(brisbane_waterbodies, c(xmin = min(P10_coordinates[,"longitude"]),
+                                                         xmax = max(P10_coordinates[,"longitude"]),
+                                                         ymin = -max(P10_coordinates[,"latitude"]),
+                                                         ymax = -min(P10_coordinates[,"latitude"])))
+         
+         # extend a little to the right for plotting piecharts
+         bb <- st_bbox(P10_shapefile)
+         xlim <- c(bb["xmin"]-0.00005, bb["xmax"]+0.00005)
+         ylim <- c(bb["ymin"]-0.00005, bb["ymax"]+0.00005)
+         
+         ## assemble plot
+         screen(2)
+         par(mar=c(0,0,0,0))
+         plot(st_geometry(P10_shapefile), col = "dodgerblue", border = NA,
+              xlim = xlim, ylim = ylim)
+         rect(bb["xmin"]-0.00006, bb["ymin"]-0.0001, bb["xmax"]+0.00008, bb["ymax"]+0.00006,border="black", lwd=1)
+         
+         ## add piecharts
+         for (n in 1:nrow(P10_microsite_plotter)) {
+           floating.pie(xpos=P10_microsite_plotter[,"lat"][n], ypos=-P10_microsite_plotter[,"long"][n], 
+                        x=c(P10_microsite_plotter[,4][n], P10_microsite_plotter[,5][n]), col=c(landoltia_col, lemna_col),
+                        edges=1000, radius = 0.00003)
+     }
+         close.screen(2)
          
      ## MICRO SITE: stacked barplot & competitive environment ####
      
@@ -3533,3 +3605,41 @@
                                     ifelse(grepl("P27", rownames(glpca_result$scores)), P27_col,
                                            ifelse(grepl("P36", rownames(glpca_result$scores)), P36_col, rest_col))))))
      
+     
+     
+     
+     draw_pie <- function(x0, y0, values, radius = 0.05, cols) {
+       values <- values / sum(values)
+       angles <- c(0, cumsum(values)) * 2 * pi
+       
+       for (i in seq_along(values)) {
+         theta <- seq(angles[i], angles[i + 1], length.out = 100)
+         x <- c(x0, x0 + radius * cos(theta), x0)
+         y <- c(y0, y0 + radius * sin(theta), y0)
+         
+         polygon(x, y, col = cols[i], border = "black")
+       }
+     }
+     
+     plot(1:3, 1:3, type = "n", asp = 1)
+     
+     draw_pie(1, 1, c(2, 3, 4), cols = c("red", "blue", "green"))
+     draw_pie(2, 2, c(5, 1, 2), cols = c("orange", "purple", "cyan"))
+     draw_pie(3, 1.5, c(1, 1, 1), cols = c("black", "grey", "pink"))
+     pie()
+     
+     
+     
+     
+     theta <- seq(0, 2*pi, length.out = 200)
+     x <- 0.5 + 0.1 * cos(theta)
+     y <- 0.5 + 0.1 * sin(theta)
+     polygon(x, y, col = c("red","blue"), border = "black")
+     
+     windows(type = "cairo")
+     
+     pdf("plot.pdf", width = 6, height = 6)
+     plot(1, 1, type = "n")
+     symbols(1, 1, circles = 0.1, inches = FALSE, add = TRUE)
+     pie(c(2, 3, 4), radius = 0.1)
+     dev.off()
