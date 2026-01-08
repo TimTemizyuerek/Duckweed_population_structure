@@ -806,7 +806,7 @@
                         x=c(waterbody_map[,4][n], waterbody_map[,5][n]), radius=waterbody_map[,"scaled_total"][n],
                         col=c(landoltia_col, lemna_col),
                         edges=1000)
-         }
+     }
          close.screen(1)
          
      ## plot P10 inlet
@@ -1691,6 +1691,125 @@
        dev.off()
        
      }
+     
+     
+     
+     ## SUPPLEMENT PLOTS ####
+     
+     ## clone cutoff
+     split.screen(rbind(c(0, 0.49, 0, 1),
+                        c(0.51, 1, 0, 1)))
+     
+     screen(1)
+     par(mar=c(4.5,4.5,2,0))
+     hist(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)], breaks=100,
+          main = "Landoltia", col=landoltia_col, xlab="", ylim=c(0,1100)); box()
+     abline(v=0.02, col="red", lty=2)
+     close.screen(1)
+     
+     
+     screen(2)
+     lemna_hist = hist(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)], breaks=100,
+                       main = "Lemna", col=lemna_col, xlab="", ylim=c(0,1100), plot=FALSE)
+     par(mar=c(4.5,0,2,4.5))
+     plot(NULL, xlim=c(min(lemna_hist$breaks), max(lemna_hist$breaks)), ylim=c(0,1100), xlab="", yaxt="n", main="Lemna")
+     plot(lemna_hist, add=TRUE, col=lemna_col)
+     abline(v=0.02, col="red", lty=2)
+     close.screen(2)
+     close.screen(all.screens = TRUE)
+     
+     par(xpd = NA)  # allow drawing outside plot region
+     text(x = 0.33, y = -0.2,labels = "Pairwise genetic distances")
+     par(xpd = FALSE)
+     
+     ## rarefaction curves
+     
+     ## subset data, and compute rarecurves
+     landoltia_pond10 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P10")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P10"))]      
+     landoltia_pond14 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P14")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P14"))]      
+     landoltia_pond19 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P19")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P19"))]      
+     landoltia_pond27 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P27")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P27"))]      
+     landoltia_pond36 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P36")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P36"))]      
+     
+     landoltia_rarecurve_all = hamdist_to_rarecurve(landoltia_hamdist)
+     landoltia_rarecurve_P10 = hamdist_to_rarecurve(landoltia_pond10)
+     landoltia_rarecurve_P14 = hamdist_to_rarecurve(landoltia_pond14)
+     landoltia_rarecurve_P19 = hamdist_to_rarecurve(landoltia_pond19)
+     landoltia_rarecurve_P27 = hamdist_to_rarecurve(landoltia_pond27)
+     landoltia_rarecurve_P36 = hamdist_to_rarecurve(landoltia_pond36)
+     
+     landoltia_rareplot_all = rarecurve(landoltia_rarecurve_all)
+     landoltia_rareplot_P10 = rarecurve(landoltia_rarecurve_P10)
+     landoltia_rareplot_P14 = rarecurve(landoltia_rarecurve_P14)
+     landoltia_rareplot_P19 = rarecurve(landoltia_rarecurve_P19)
+     landoltia_rareplot_P27 = rarecurve(landoltia_rarecurve_P27)
+     landoltia_rareplot_P36 = rarecurve(landoltia_rarecurve_P36)
+     
+     lemna_pond10 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P10")),c(which(substr(colnames(lemna_hamdist),1,3) == "P10"))]      
+     lemna_pond14 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P14")),c(which(substr(colnames(lemna_hamdist),1,3) == "P14"))]      
+     lemna_pond19 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P19")),c(which(substr(colnames(lemna_hamdist),1,3) == "P19"))]      
+     lemna_pond27 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P27")),c(which(substr(colnames(lemna_hamdist),1,3) == "P27"))]      
+     lemna_pond36 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P36")),c(which(substr(colnames(lemna_hamdist),1,3) == "P36"))]      
+     
+     lemna_rarecurve_all = hamdist_to_rarecurve(lemna_hamdist)
+     lemna_rarecurve_P10 = hamdist_to_rarecurve(lemna_pond10)
+     lemna_rarecurve_P14 = hamdist_to_rarecurve(lemna_pond14)
+     lemna_rarecurve_P19 = hamdist_to_rarecurve(lemna_pond19)
+     lemna_rarecurve_P27 = hamdist_to_rarecurve(lemna_pond27)
+     lemna_rarecurve_P36 = hamdist_to_rarecurve(lemna_pond36)
+     
+     lemna_rareplot_all = rarecurve(lemna_rarecurve_all)
+     lemna_rareplot_P10 = rarecurve(lemna_rarecurve_P10)
+     lemna_rareplot_P14 = rarecurve(lemna_rarecurve_P14)
+     lemna_rareplot_P19 = rarecurve(lemna_rarecurve_P19)
+     lemna_rareplot_P27 = rarecurve(lemna_rarecurve_P27)
+     lemna_rareplot_P36 = rarecurve(lemna_rarecurve_P36)
+     
+     ## assemble plot
+     par(mfrow=c(2,2))
+     
+     ## plot 1 - population rarefaction
+     plot(1:length(landoltia_rareplot_all[[1]]),landoltia_rareplot_all[[1]], type="l", lwd=3, col=landoltia_col,
+          xlab="sampled individuals", ylab="clones found", main="Meta-population")
+     legend("topleft", inset=0.02, legend=c("Landoltia", "Lemna"), 
+            col=c(landoltia_col, lemna_col), lty=1, lwd=3)
+     lines(1:length(lemna_rareplot_all[[1]]),lemna_rareplot_all[[1]], type="l", lwd=3, col=lemna_col)
+     
+     ## plot 2 - clone distributions
+     plot(1:length(landoltia_boxplotter), rev(sort(landoltia_boxplotter)), main="Clone distribution",
+          xlab="clones", ylab="# of ponds each clone occurs in", col=landoltia_col, lwd=3, type="l",
+          xlim=c(0,68), ylim=c(1,6))
+     lines(1:length(lemna_boxplotter), rev(sort(lemna_boxplotter)),
+           col=lemna_col, lwd=3)
+     legend("topright", inset=0.02, legend=c("Landoltia", "Lemna"), 
+            col=c(landoltia_col, lemna_col), lty=1, lwd=3)
+     
+     ## this needs work - lines are wrong, needs to be dots or something
+     
+     ## plot 3 - landoltia rarefaction
+     plot(1:length(landoltia_rareplot_P10[[1]]),landoltia_rareplot_P10[[1]], col=P10_col, lwd=3, type="l",
+          ylim=c(1,13), xlim=c(0,27), xlab="sampled individuals", ylab="clones found", main="Landoltia")
+     legend("topleft", inset=0.02, legend=c("P10", "P14", "P19", "P27", "P36"), 
+            col=c(P10_col, P14_col, P19_col, P27_col, P36_col), lty=1, lwd=3)
+     lines(1:length(landoltia_rareplot_P10[[1]]),landoltia_rareplot_P10[[1]], col=P10_col, lwd=3)
+     lines(1:length(landoltia_rareplot_P14[[1]]),landoltia_rareplot_P14[[1]], col=P14_col, lwd=3)
+     lines(1:length(landoltia_rareplot_P19[[1]]),landoltia_rareplot_P19[[1]], col=P19_col, lwd=3)
+     lines(1:length(landoltia_rareplot_P27[[1]]),landoltia_rareplot_P27[[1]], col=P27_col, lwd=3)
+     lines(1:length(landoltia_rareplot_P36[[1]]),landoltia_rareplot_P36[[1]], col=P36_col, lwd=3)
+     
+     ## plot 4 - lemna rarefaction
+     plot(1:length(lemna_rareplot_P10[[1]]),lemna_rareplot_P10[[1]], col=P10_col, lwd=3, type="l",
+          ylim=c(1,4), xlim=c(0,27), xlab="sampled individuals", ylab="clones found", main="Lemna",
+          yaxt="n")
+     axis(2, at=c(1,2,3,4), labels=c(1,2,3,4))
+     legend("topleft", inset=0.02, legend=c("P10", "P14", "P19", "P27", "P36"), 
+            col=c(P10_col, P14_col, P19_col, P27_col, P36_col), lty=1, lwd=3)
+     lines(1:length(lemna_rareplot_P10[[1]]),lemna_rareplot_P10[[1]], col=P10_col, lwd=3)
+     lines(1:length(lemna_rareplot_P14[[1]]),lemna_rareplot_P14[[1]], col=P14_col, lwd=3)
+     lines(1:length(lemna_rareplot_P19[[1]]),lemna_rareplot_P19[[1]], col=P19_col, lwd=3)
+     lines(1:length(lemna_rareplot_P27[[1]]),lemna_rareplot_P27[[1]], col=P27_col, lwd=3)
+     lines(1:length(lemna_rareplot_P36[[1]]),lemna_rareplot_P36[[1]], col=P36_col, lwd=3)
+     
      
      
      
@@ -3390,77 +3509,6 @@
      axis(1, at = 1:length(bp$order),
           labels = bp$order, las=1,
           cex.axis = .4)
-     
-     
-     ## rarefaction curves ####
-     
-     par(mfrow=c(2,2))
-     
-     landoltia_pond10 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P10")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P10"))]      
-     landoltia_pond14 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P14")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P14"))]      
-     landoltia_pond19 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P19")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P19"))]      
-     landoltia_pond27 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P27")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P27"))]      
-     landoltia_pond36 = landoltia_hamdist[c(which(substr(colnames(landoltia_hamdist),1,3) == "P36")),c(which(substr(colnames(landoltia_hamdist),1,3) == "P36"))]      
-     
-     landoltia_rarecurve_all = hamdist_to_rarecurve(landoltia_hamdist)
-     landoltia_rarecurve_P10 = hamdist_to_rarecurve(landoltia_pond10)
-     landoltia_rarecurve_P14 = hamdist_to_rarecurve(landoltia_pond14)
-     landoltia_rarecurve_P19 = hamdist_to_rarecurve(landoltia_pond19)
-     landoltia_rarecurve_P27 = hamdist_to_rarecurve(landoltia_pond27)
-     landoltia_rarecurve_P36 = hamdist_to_rarecurve(landoltia_pond36)
-     
-     landoltia_rareplot_all = rarecurve(landoltia_rarecurve_all)
-     landoltia_rareplot_P10 = rarecurve(landoltia_rarecurve_P10)
-     landoltia_rareplot_P14 = rarecurve(landoltia_rarecurve_P14)
-     landoltia_rareplot_P19 = rarecurve(landoltia_rarecurve_P19)
-     landoltia_rareplot_P27 = rarecurve(landoltia_rarecurve_P27)
-     landoltia_rareplot_P36 = rarecurve(landoltia_rarecurve_P36)
-     
-     plot(1:length(landoltia_rareplot_all[[1]]),landoltia_rareplot_all[[1]], type="l",
-          xlab="sampled individuals", ylab="clones found", lwd=3, main="Landoltia")
-     lines(1:length(landoltia_rareplot_P10[[1]]),landoltia_rareplot_P10[[1]], col=P10_col, lwd=3)
-     lines(1:length(landoltia_rareplot_P14[[1]]),landoltia_rareplot_P14[[1]], col=P14_col, lwd=3)
-     lines(1:length(landoltia_rareplot_P19[[1]]),landoltia_rareplot_P19[[1]], col=P19_col, lwd=3)
-     lines(1:length(landoltia_rareplot_P27[[1]]),landoltia_rareplot_P27[[1]], col=P27_col, lwd=3)
-     lines(1:length(landoltia_rareplot_P36[[1]]),landoltia_rareplot_P36[[1]], col=P36_col, lwd=3)
-     
-     
-     lemna_pond10 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P10")),c(which(substr(colnames(lemna_hamdist),1,3) == "P10"))]      
-     lemna_pond14 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P14")),c(which(substr(colnames(lemna_hamdist),1,3) == "P14"))]      
-     lemna_pond19 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P19")),c(which(substr(colnames(lemna_hamdist),1,3) == "P19"))]      
-     lemna_pond27 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P27")),c(which(substr(colnames(lemna_hamdist),1,3) == "P27"))]      
-     lemna_pond36 = lemna_hamdist[c(which(substr(colnames(lemna_hamdist),1,3) == "P36")),c(which(substr(colnames(lemna_hamdist),1,3) == "P36"))]      
-     
-     lemna_rarecurve_all = hamdist_to_rarecurve(lemna_hamdist)
-     lemna_rarecurve_P10 = hamdist_to_rarecurve(lemna_pond10)
-     lemna_rarecurve_P14 = hamdist_to_rarecurve(lemna_pond14)
-     lemna_rarecurve_P19 = hamdist_to_rarecurve(lemna_pond19)
-     lemna_rarecurve_P27 = hamdist_to_rarecurve(lemna_pond27)
-     lemna_rarecurve_P36 = hamdist_to_rarecurve(lemna_pond36)
-     
-     lemna_rareplot_all = rarecurve(lemna_rarecurve_all)
-     lemna_rareplot_P10 = rarecurve(lemna_rarecurve_P10)
-     lemna_rareplot_P14 = rarecurve(lemna_rarecurve_P14)
-     lemna_rareplot_P19 = rarecurve(lemna_rarecurve_P19)
-     lemna_rareplot_P27 = rarecurve(lemna_rarecurve_P27)
-     lemna_rareplot_P36 = rarecurve(lemna_rarecurve_P36)
-     
-     plot(1:length(lemna_rareplot_all[[1]]),lemna_rareplot_all[[1]], type="l",
-          xlab="sampled individuals", ylab="clones found", lwd=3, main="Lemna")
-     lines(1:length(lemna_rareplot_P10[[1]]),lemna_rareplot_P10[[1]], col=P10_col, lwd=3)
-     lines(1:length(lemna_rareplot_P14[[1]]),lemna_rareplot_P14[[1]], col=P14_col, lwd=3)
-     lines(1:length(lemna_rareplot_P19[[1]]),lemna_rareplot_P19[[1]], col=P19_col, lwd=3)
-     lines(1:length(lemna_rareplot_P27[[1]]),lemna_rareplot_P27[[1]], col=P27_col, lwd=3)
-     lines(1:length(lemna_rareplot_P36[[1]]),lemna_rareplot_P36[[1]], col=P36_col, lwd=3)
-     
-     landoltia_boxplotter = sapply(apply(landoltia_clone_df, 2, function(x) unique(na.omit(substr(x,1,3)))),length)
-     lemna_boxplotter = sapply(apply(lemna_clone_df, 2, function(x) unique(na.omit(substr(x,1,3)))),length)
-     
-     plot(1:length(lemna_boxplotter), rev(sort(lemna_boxplotter)),
-          xlab="clones", ylab="# of ponds each clone occurs in", pch=21, bg=landoltia_col, cex=1.5)
-     plot(1:length(landoltia_boxplotter), rev(sort(landoltia_boxplotter)),
-          xlab="clones", ylab="# of ponds each clone occurs in", pch=21, bg=lemna_col, cex=1.5)
-     
      
      
      ## LANDOLTIA compute euclidean distance ####
