@@ -883,7 +883,7 @@
          close.screen(2)
          close.screen(all.screens = TRUE)
          
-     ## MICRO SITE: stacked barplot & competitive environment ####
+     ## MICRO SITE: competitive environment ####
      
      # make categories for stacked barplot
      micro_summary[,"group"] = ifelse(micro_summary[,"lemna"] > 0 & micro_summary[,"landoltia"] == 0, "lemna",
@@ -897,17 +897,6 @@
      
      ## assembly plotter dataframe
      stacked_barplotter = rbind(lemna_counts, landoltia_counts, both_counts)
-     
-     ## stacked barplot
-     
-         # # assembly plot and legend
-         # barplot(stacked_barplotter, 
-         #         col=c(lemna_col, landoltia_col, both_col), 
-         #         space=0.1, ylab="Frequency", xlab="Plants per micro site", ylim=c(0,(max(colSums(stacked_barplotter))+1)))
-         # box();
-         # legend("topleft", inset=0.01, legend=c("lemna", "landoltia", "both"),
-         #        fill=c(lemna_col, landoltia_col, both_col))
-         
      
      ## two species within micro site diversity
     
@@ -950,16 +939,19 @@
        lemna_perm_mean[n] = mean(runner_lemna_matrix[lower.tri(runner_lemna_matrix, diag=FALSE)])
      }
      
-         ## set up screens
+     ## set up screens
+     
          split.screen(rbind(c(0, 0.8, 0, 0.8),     ## scatterplot 
                             c(0.82, 1, 0, 0.8),    ## y-axis (landoltia)
                             c(0, 0.8, 0.82, 1)))   ## x-axis (lemna)
+         
           
-         ## scatterplot
+     ## scatterplot
+         
          screen(1)
          par(mar=c(4.1,4.1,0,0))
-         plot(NULL, xlab=expression("within micro site distance (" * italic("L. aequinoctialis" * ")")),
-              ylab=expression("within micro site distance (" * italic("L. punctata" * ")")),
+         plot(NULL, xlab=expression("genetic distance within micro site (" * italic("L. aequinoctialis" * ")")),
+              ylab=expression("genetic distance within micro site (" * italic("L. punctata" * ")")),
               xlim=c(0,max(lemna_perm_mean)), ylim=c(0,max(landoltia_perm_mean)))
          
          ## x=y under the points
@@ -975,34 +967,6 @@
                                                ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P36", P36_col, rest_col))))),
                 cex=2)
          
-         # ## NOT REALLY INFORMATIVE
-         # ## waterbody points
-         # ## extract waterbodies diversities
-         # waterbody_avg_distance = data.frame(matrix(ncol=3, nrow=0))
-         # for (n in c("P10", "P14", "P19", "P27", "P36")) {
-         #   
-         #   runner_landoltia_hamdist = landoltia_hamdist[which(substr(colnames(landoltia_hamdist),1,3) == n),which(substr(colnames(landoltia_hamdist),1,3) == n)]
-         #   runner_lemna_hamdist = lemna_hamdist[which(substr(colnames(lemna_hamdist),1,3) == n),which(substr(colnames(lemna_hamdist),1,3) == n)]
-         #   
-         #   ## compute averages
-         #   filler_row = c(n, 
-         #                  mean(runner_lemna_hamdist[lower.tri(runner_lemna_hamdist, diag=FALSE)])^(1/3),
-         #                  mean(runner_landoltia_hamdist[lower.tri(runner_landoltia_hamdist, diag=FALSE)])^(1/3))
-         #   waterbody_avg_distance = rbind(waterbody_avg_distance,filler_row) 
-         # }
-         # colnames(waterbody_avg_distance) = c("waterbody_ID", "lemna_avg_distance", "landoltia_avg_distance")
-         # waterbody_avg_distance[,"lemna_avg_distance"] = as.numeric(waterbody_avg_distance[,"lemna_avg_distance"])
-         # waterbody_avg_distance[,"landoltia_avg_distance"] = as.numeric(waterbody_avg_distance[,"landoltia_avg_distance"])
-         # 
-         # points(waterbody_avg_distance[,"lemna_avg_distance"], waterbody_avg_distance[,"landoltia_avg_distance"],
-         #        pch=21,
-         #        bg=ifelse(waterbody_avg_distance[,"waterbody_ID"] == "P10", "purple",
-         #                  ifelse(waterbody_avg_distance[,"waterbody_ID"] == "P14", "orange",
-         #                         ifelse(waterbody_avg_distance[,"waterbody_ID"] == "P19", "dodgerblue3",
-         #                                ifelse(waterbody_avg_distance[,"waterbody_ID"] == "P27", "firebrick3",
-         #                                       ifelse(waterbody_avg_distance[,"waterbody_ID"] == "P36", "darkgreen", "black"))))),
-         #        cex=5)
-         # 
          
          ## legend on top of the points/line                                              
          legend("topright", legend=c("P14", "P19", "P27", "P36", "other"),
@@ -1010,7 +974,8 @@
                 pch=21, bty="n", pt.cex = 2)
          close.screen(1)
      
-         ## add landoltia histogram
+     ## add landoltia histogram
+         
          screen(2)
          par(mgp=c(1,0,0))
          landoltia_breaks = pretty(range(landoltia_perm_mean), n=20)
@@ -1027,7 +992,8 @@
          legend("topright", col=c(landoltia_col, both_col),legend=c("micro", "global"), pch=15, bty="n")
          close.screen(2)
          
-         ## add lemna histogram
+     ## add lemna histogram
+         
          screen(3)
          par(mgp=c(1,0,0))
          lemna_breaks = pretty(range(lemna_perm_mean), n=20)
@@ -1049,8 +1015,8 @@
          ## wrap it up
          close.screen(all.screens = TRUE)
         
-         ## t test to comparing genetic distances at micro sites
-         t.test(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"], paired=FALSE)
+     ## t test to comparing genetic distances at micro sites
+     t.test(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"], paired=FALSE)
      
      ## WATERBODY: within vs outside distance & diversity ####
      
@@ -1783,6 +1749,9 @@
      lemna_rareplot_P19 = rarecurve(lemna_rarecurve_P19)
      lemna_rareplot_P27 = rarecurve(lemna_rarecurve_P27)
      lemna_rareplot_P36 = rarecurve(lemna_rarecurve_P36)
+     
+     landoltia_boxplotter = sapply(apply(landoltia_clone_df, 2, function(x) unique(na.omit(substr(x,1,3)))),length)
+     lemna_boxplotter = sapply(apply(lemna_clone_df, 2, function(x) unique(na.omit(substr(x,1,3)))),length)
      
      ## assemble plot
      par(mfrow=c(2,2))
@@ -3710,3 +3679,15 @@
      symbols(1, 1, circles = 0.1, inches = FALSE, add = TRUE)
      pie(c(2, 3, 4), radius = 0.1)
      dev.off()
+     ## stacked barplot ####
+     
+     ## stacked barplot
+     
+     # # assembly plot and legend
+     # barplot(stacked_barplotter, 
+     #         col=c(lemna_col, landoltia_col, both_col), 
+     #         space=0.1, ylab="Frequency", xlab="Plants per micro site", ylim=c(0,(max(colSums(stacked_barplotter))+1)))
+     # box();
+     # legend("topleft", inset=0.01, legend=c("lemna", "landoltia", "both"),
+     #        fill=c(lemna_col, landoltia_col, both_col))
+     
