@@ -737,7 +737,7 @@
      ## set up plotting area
      
          split.screen(rbind(c(0,1,0,1),
-                            c(0.1,0.35,0.59,0.815)))  
+                            c(0.09,0.35,0.58,0.84)))  
          
      ## plot background map
      
@@ -755,6 +755,16 @@
          plot(st_geometry(brisbane_coastline), col = "black", lwd = 1, add = TRUE)
          rect(xmin, ymin, xmax, ymax,
               col=scales::alpha("white", 0.25), border="black", lwd=1)
+         ## compute scalebar
+         #distm(rbind(c(152.36,-27.74),c(152.614, -27.74)), fun = distVincentyEllipsoid)
+         lines(x=c(152.08,152.324), y=c(-27.735,-27.735), lwd=2)
+         text(152.202, -27.72, labels="25km")
+         ## north pointer
+         points(152.065,-27.65,pch=17, cex=1.8)
+         lines(c(152.065,152.065), c(-27.65,-27.7),lwd=2)
+         text(152.065, -27.71, labels="N")
+         legend(153.15, -27.138, legend=c("Lemna", "Landoltia"),
+                fill=c(lemna_col, landoltia_col), )
          
          ## manual x-axis
          xticks = round(seq(from=xmin, to=xmax-0.02, length.out = 5),2)
@@ -799,14 +809,16 @@
                                          11,12,13,14,15,16,17,18,
                                          20,21,22,23,24,25,26,27,
                                          29,30,31,32),]
-         
          ## add piecharts
          for (n in 1:nrow(waterbody_map)) {
            floating.pie(xpos=waterbody_map[,"lat"][n], ypos=-waterbody_map[,"long"][n], 
                         x=c(waterbody_map[,4][n], waterbody_map[,5][n]), radius=waterbody_map[,"scaled_total"][n],
                         col=c(landoltia_col, lemna_col),
                         edges=1000)
-     }
+         }
+         
+         ## plot letter to refernce inlet
+         text(waterbody_map[1,]["lat"],-waterbody_map[1,]["long"], labels="P10")
          close.screen(1)
          
      ## plot P10 inlet
@@ -846,8 +858,8 @@
          
          # extend a little to the right for plotting piecharts
          bb <- st_bbox(P10_shapefile)
-         xlim <- c(bb["xmin"]-0.00005, bb["xmax"]+0.00005)
-         ylim <- c(bb["ymin"]-0.00005, bb["ymax"]+0.00005)
+         xlim <- c(bb["xmin"]-0.00008, bb["xmax"]+0.00008)
+         ylim <- c(bb["ymin"]-0.00008, bb["ymax"]+0.00008)
          
          ## assemble plot
          screen(2)
@@ -855,6 +867,12 @@
          plot(st_geometry(P10_shapefile), col = "dodgerblue", border = NA,
               xlim = xlim, ylim = ylim)
          rect(bb["xmin"]-0.00006, bb["ymin"]-0.0001, bb["xmax"]+0.00008, bb["ymax"]+0.00006,border="black", lwd=1)
+         text(153.0644,-27.54035, labels="P10")
+         
+         ## compute scalebar
+         distm(rbind(c(153.063554,-27.74),c(153.0633, -27.74)), fun = distVincentyEllipsoid)
+         lines(x=c(153.0634,153.0637),y=c(-27.54105, -27.54105), lwd=2)
+         text(153.06355, -27.54099, labels="25m")
          
          ## add piecharts
          for (n in 1:nrow(P10_microsite_plotter)) {
@@ -863,6 +881,7 @@
                         edges=1000, radius = 0.00003)
      }
          close.screen(2)
+         close.screen(all.screens = TRUE)
          
      ## MICRO SITE: stacked barplot & competitive environment ####
      
