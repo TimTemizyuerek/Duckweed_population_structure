@@ -736,8 +736,10 @@
      
      ## set up plotting area
      
-         split.screen(rbind(c(0,1,0,1),
-                            c(0.09,0.35,0.58,0.84)))  
+         split.screen(rbind(c(0,1,0,1),             ## main background map
+                            c(0.09,0.35,0.58,0.84), ## Australia map
+                            c(0.4,0.4,0,0.2)))      ## P10 map
+         
          
      ## plot background map
      
@@ -763,16 +765,24 @@
          points(152.065,-27.65,pch=17, cex=1.8)
          lines(c(152.065,152.065), c(-27.65,-27.7),lwd=2)
          text(152.065, -27.71, labels="N")
-         legend(153.15, -27.138, legend=c("Lemna", "Landoltia"),
-                fill=c(lemna_col, landoltia_col), )
+         # legend(153.15, -27.138, legend=c("Lemna", "Landoltia"),
+         #        fill=c(lemna_col, landoltia_col), )
+          
+         
+         
+         
+         
+         
+         
+         WIP here
          
          ## manual x-axis
-         xticks = round(seq(from=xmin, to=xmax-0.02, length.out = 5),2)
+         xticks = pretty(xmin:xmax-0.02)[2:7]
          segments(xticks, ymin, xticks, ymin-(ymax-ymin)*0.01)
          text(xticks, ymin - (ymax-ymin)*0.05, labels = xticks)
          
          ## manual y-axis 
-         yticks = round(seq(from=ymin, to=ymax, length.out = 5),2)
+         yticks = c(-27.7,-27.5,-27.3,-27.1)
          segments(xmin, yticks, xmin-(xmax-xmin)*0.005, yticks)
          mtext(side = 2, at = yticks, text = yticks, las = 1, line = -0.5)
          
@@ -799,26 +809,57 @@
          waterbody_map[,"lemna"] = as.numeric(waterbody_map[,"lemna"]);waterbody_map[,"landoltia"] = as.numeric(waterbody_map[,"landoltia"])
          waterbody_map[,"total"] = as.numeric(waterbody_map[,"total"])
          
-         ## transform total for scaling in plot
-         waterbody_map$scaled_total = 0.01 + (0.04*(waterbody_map[,"total"]-1))/51
+         ## change coordinates for pie charts that need moving
+         ## add lines from original position to new position
          
-         ## reorder so that the large piecharts are plotted first
-         waterbody_map = waterbody_map[c(1,5,10,19,28,
-                                         2,3,4,
-                                         6,7,8,9,
-                                         11,12,13,14,15,16,17,18,
-                                         20,21,22,23,24,25,26,27,
-                                         29,30,31,32),]
-         ## add piecharts
+         
+         ## draw offset lines
+         lines(c(waterbody_map[6,"lat"], waterbody_map[6,"lat"]),
+               c(-waterbody_map[6,"long"], -waterbody_map[6,"long"]+0.04), lwd=1.5)
+         lines(c(waterbody_map[8,"lat"], waterbody_map[8,"lat"]-0.04),
+               c(-waterbody_map[8,"long"], -waterbody_map[8,"long"]), lwd=1.5)
+         lines(c(waterbody_map[12,"lat"], waterbody_map[12,"lat"]+0.04),
+               c(-waterbody_map[12,"long"], -waterbody_map[12,"long"]), lwd=1.5)
+         lines(c(waterbody_map[13,"lat"], waterbody_map[13,"lat"]),
+               c(-waterbody_map[13,"long"], -waterbody_map[13,"long"]-0.04), lwd=1.5)
+         lines(c(waterbody_map[16,"lat"], waterbody_map[16,"lat"]+0.04),
+               c(-waterbody_map[16,"long"], -waterbody_map[16,"long"]), lwd=1.5)
+         lines(c(waterbody_map[17,"lat"], waterbody_map[17,"lat"]-0.04),
+               c(-waterbody_map[17,"long"], -waterbody_map[17,"long"]), lwd=1.5)
+         lines(c(waterbody_map[18,"lat"], waterbody_map[18,"lat"]),
+               c(-waterbody_map[18,"long"], -waterbody_map[18,"long"]-0.04), lwd=1.5)
+         lines(c(waterbody_map[20,"lat"], waterbody_map[20,"lat"]),
+               c(-waterbody_map[20,"long"], -waterbody_map[20,"long"]-0.04), lwd=1.5)
+         lines(c(waterbody_map[24,"lat"], waterbody_map[24,"lat"]+0.04),
+               c(-waterbody_map[24,"long"], -waterbody_map[24,"long"]), lwd=1.5)
+         lines(c(waterbody_map[30,"lat"], waterbody_map[30,"lat"]+0.04),
+               c(-waterbody_map[30,"long"], -waterbody_map[30,"long"]), lwd=1.5)
+         lines(c(waterbody_map[31,"lat"], waterbody_map[31,"lat"]-0.04),
+               c(-waterbody_map[31,"long"], -waterbody_map[31,"long"]), lwd=1.5)
+         
+         
+         ## adjust pie location
+         waterbody_map[6,"long"] = waterbody_map[6,"long"]-0.04
+         waterbody_map[8,"lat"] = waterbody_map[8,"lat"]-0.04
+         waterbody_map[12,"long"] = waterbody_map[12,"long"]+0.04
+         waterbody_map[13,"lat"] = waterbody_map[13,"lat"]+0.04
+         waterbody_map[16,"lat"] = waterbody_map[16,"lat"]+0.04
+         waterbody_map[17,"lat"] = waterbody_map[17,"lat"]-0.04
+         waterbody_map[18,"long"] = waterbody_map[18,"long"]+0.04
+         waterbody_map[20,"long"] = waterbody_map[20,"long"]+0.04
+         waterbody_map[24,"lat"] = waterbody_map[24,"lat"]+0.04
+         waterbody_map[30,"lat"] = waterbody_map[30,"lat"]+0.04
+         waterbody_map[31,"lat"] = waterbody_map[31,"lat"]-0.04
+         
+         
          for (n in 1:nrow(waterbody_map)) {
-           floating.pie(xpos=waterbody_map[,"lat"][n], ypos=-waterbody_map[,"long"][n], 
-                        x=c(waterbody_map[,4][n], waterbody_map[,5][n]), radius=waterbody_map[,"scaled_total"][n],
-                        col=c(landoltia_col, lemna_col),
-                        edges=1000)
+         floating.pie(xpos=waterbody_map[n,"lat"], ypos=-waterbody_map[n,"long"], 
+                      x=c(waterbody_map[n,4], waterbody_map[n,5]), radius=0.017,
+                      col=c(lemna_col, landoltia_col),
+                      edges=1000)
          }
          
-         ## plot letter to refernce inlet
-         text(waterbody_map[1,]["lat"],-waterbody_map[1,]["long"], labels="P10")
+         
          close.screen(1)
          
      ## plot P10 inlet
@@ -1797,9 +1838,6 @@
      lines(1:length(lemna_rareplot_P19[[1]]),lemna_rareplot_P19[[1]], col=P19_col, lwd=3)
      lines(1:length(lemna_rareplot_P27[[1]]),lemna_rareplot_P27[[1]], col=P27_col, lwd=3)
      lines(1:length(lemna_rareplot_P36[[1]]),lemna_rareplot_P36[[1]], col=P36_col, lwd=3)
-     
-     
-     
      
 ## scraps ####
      ## subsetting alive ####
