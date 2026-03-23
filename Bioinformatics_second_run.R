@@ -774,7 +774,7 @@
          
          
          
-         WIP here
+         #WIP here
          
          ## manual x-axis
          xticks = pretty(xmin:xmax-0.02)[2:7]
@@ -1058,6 +1058,125 @@
         
      ## t test to comparing genetic distances at micro sites
      t.test(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"], paired=FALSE)
+     
+     ## MICRO SITE: new version (Tim's feedback) ####
+     
+     micro_scatter_plotter$dif = micro_scatter_plotter[,"landoltia_avg_distance"] - micro_scatter_plotter[,"lemna_avg_distance"]
+     micro_scatter_plotter = micro_scatter_plotter[order(-micro_scatter_plotter[,"dif"]), ]
+     
+     
+     
+     # ---- 1. Define four 1D distributions ----
+     lan_null <- landoltia_perm_mean[1:100]
+     lem_null <- lemna_perm_mean[1:100]
+     lan_true <- micro_scatter_plotter[,"landoltia_avg_distance"]
+     lem_true <- micro_scatter_plotter[,"lemna_avg_distance"]
+     
+     # ---- 2. Define a common grid for the 2D heatmaps ----
+     xbreaks <- seq(min(c(lan_null, lem_null, lan_true, lem_true)),
+                    max(c(lan_null, lem_null, lan_true, lem_true)), length = 30)
+     ybreaks <- xbreaks  # same grid for Y axis
+     
+     # ---- 3. Convert 1D distributions into 2D matrices using density ----
+     dens1_y <- density(lan_null, from = min(xbreaks), to = max(xbreaks), n = 30)$y
+     dens1_x <- density(lem_null, from = min(ybreaks), to = max(ybreaks), n = 30)$y
+     z1 <- outer(dens1_x, dens1_y)  # first 2D distribution
+     
+     dens2_y <- density(lan_true, from = min(xbreaks), to = max(xbreaks), n = 30)$y
+     dens2_x <- density(lem_true, from = min(ybreaks), to = max(ybreaks), n = 30)$y
+     z2 <- outer(dens2_x, dens2_y)  # second 2D distribution
+     
+     # Transparent colour palettes
+     col1 <- alpha(topo.colors(20), 0.5)
+     col2 <- alpha(topo.colors(20), 0.5)
+     
+     
+     
+     
+     
+     split.screen(rbind(c(0, 0.5, 0, 1),     ## scatterplot 
+                        c(0.5, 1, 0.5, 1),   ## actual heatmap
+                        c(0.5, 1, 0, 0.5)))  ## null-model heatmap
+     
+     
+     screen(1)
+     par(mar=c(2.2,2.2,2.2,1.2), tck = -0.02, mgp = c(1.25, 0.3, 0), xaxs = "i", yaxs = "i")
+     plot(NULL, xlab=expression("genetic distance within micro site (" * italic("Lemna" * ")")),
+          ylab=expression("genetic distance within micro site (" * italic("Landoltia" * ")")),
+          xlim=c(-0.005,0.334), ylim=c(-0.005,0.334), xaxt="n", yaxt="n", cex.lab=0.8,
+          main="Micro site genetic patterns", cex.main=0.9)
+     axis(1, cex.axis=0.7)
+     axis(2, cex.axis=0.7)
+          
+     ## x=y under the points
+     abline(a = 0, b = 1, lty=2, lwd=2, col="gray50")
+     
+     ## micro points
+     points(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"],
+            pch= 21,
+            bg=ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P10", P10_col,
+                      ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P14", P14_col,
+                             ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P19", P19_col,
+                                    ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P27", P27_col,
+                                           ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P36", P36_col, rest_col))))),
+            cex=1.5)
+     
+     
+     ## legend on top of the points/line                                              
+     legend("topleft", legend=c("P14", "P19", "P27", "P36", "other"),
+            pt.bg=c(P14_col, P19_col, P27_col, P36_col, rest_col),
+            pch=21, bty="n", pt.cex = 1.5)
+     
+     close.screen(1)
+     
+     # Plot heatmaps
+     screen(2)
+     par(mar=c(2.2,2.2,2.2,1.2), tck = -0.02, mgp = c(1.25, 0.3, 0), xaxs = "i", yaxs = "i")
+     image(xbreaks, ybreaks, z2, col = col2,
+           xaxt="n", yaxt="n",
+           xlab=expression("Micro site genetic distance (" * italic("Lemna" * ")")),
+           ylab=expression("Micro site genetic distance (" * italic("Landoltia" * ")")),
+           cex.lab=0.8, 
+           cex.main=0.9,  main="Observed genetic distance distribution")
+     axis(1, cex.axis=0.7)
+     axis(2, cex.axis=0.7)
+     close.screen(2)
+     
+     
+     screen(3)
+     par(mar=c(2.2,2.2,2.2,1.2), tck = -0.02, mgp = c(1.25, 0.3, 0), xaxs = "i", yaxs = "i")
+     image(xbreaks, ybreaks, z1, col = col2, 
+           xaxt="n", yaxt="n", 
+           xlab=expression("Micro site genetic distance (" * italic("Lemna" * ")")),
+           ylab=expression("Micro site genetic distance (" * italic("Landoltia" * ")")),
+           cex.lab=0.8, 
+           cex.main = 0.9, main="Mixture null model genetic distance distribution")
+     axis(1, cex.axis=0.7)
+     axis(2, cex.axis=0.7) 
+     close.screen(3)
+     
+     close.screen(all.screens = TRUE)
+     
+     
+     
+     
+     
+     
+     
+     
+     # lolipop plots
+     # par(mar=c(2,2,1,1))
+     # plot(1:36, micro_scatter_plotter[,"dif"],ylab="Average genetic distance difference", xlab="micro sites", xaxt="n",
+     #      pch=21,
+     #      bg=ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P10", P10_col,
+     #                   ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P14", P14_col,
+     #                          ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P19", P19_col,
+     #                                 ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P27", P27_col,
+     #                                        ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P36", P36_col, rest_col))))))
+     # for (n in 1:nrow(micro_scatter_plotter)){segments(n, 0, n, micro_scatter_plotter[n,"dif"])}
+     # abline(h=0)
+     
+     
      
      ## WATERBODY: within vs outside distance & diversity ####
      
