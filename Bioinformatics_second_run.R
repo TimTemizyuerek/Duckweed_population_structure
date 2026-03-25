@@ -75,6 +75,30 @@
        vegan::diversity(counts_boot, index = "simpson")
      }
      
+     ## helper function to draw a polygon north pointer for maps
+     north_poly = function(x, y, size) {
+       
+       ## something like pixels per unit
+       usr = par("usr")
+       dx = diff(usr[1:2])
+       dy = diff(usr[3:4])
+       
+       ## scale by size
+       h = size * dy
+       w = size * dx * 0.4
+       
+       # left triangle (black)
+       polygon(c(x, x - w/2, x),
+               c(y, y - h/2, y - h/2),
+               col = "black",border = "black")
+       
+       # right triangle (white)
+       polygon(c(x, x + w/2, x),
+               c(y, y - h/2, y - h/2),
+               col = "white",border = "black")
+     }
+     
+     
 ## FILTERING and DISTANCE CALCULATION ####
      ## initial filter with vcftools ####
      
@@ -660,209 +684,86 @@
      
      ## MAP ####
      
-     ## number of waterbodies
-     length(unique(c(substr(colnames(landoltia_hamdist),1,3), substr(colnames(lemna_hamdist),1,3))))
-     
-     ## read and transform coordinates
-     all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
-     all_coordinates$latitude = sapply(all_coordinates[,"GPS_S"], convert_dmm_to_dd)
-     all_coordinates$longitude = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
-     
-     ## read micro sites data
-     micro_sites = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/micro_sites.csv", sep=";")
-     
-     ## extract summary dataframe
-     micro_summary = data.frame("micro_site_ID" = character(), "lemna" = integer(), "landoltia" = integer())
-     for (n in unique(micro_sites[,"micro_site_ID"])) {
-       micro_runner = micro_sites[which(micro_sites[,"micro_site_ID"] == n),, drop=FALSE]
-       filler_row = data.frame("micro_site_ID" = n,
-                               "lemna" = sum(micro_runner[,"species"] == "lemna"), 
-                               "landoltia" = sum(micro_runner[,"species"] == "landoltia")) 
-       micro_summary = rbind(micro_summary, filler_row)
-     }
-     micro_summary[,"sum"] = apply(micro_summary[,2:3], 1, sum)
-     
-     ## combine clone datasets
-     landoltia_clone_df[19:27,] = matrix(NA, ncol=ncol(landoltia_clone_df), nrow=9)
-     total_clone_df = cbind(lemna_clone_df,landoltia_clone_df)
-     
-     ## add clone col to micro_sites 
-     clone_vec = rep(NA, nrow(micro_sites))
-     for (n in colnames(total_clone_df)) {
-       
-       runner_col = total_clone_df[,n]
-       clone_vec[which(micro_sites[,"samples"] %in% runner_col)] = n
-       
-       
-     }
-     micro_sites[,"clone"] = clone_vec
-     
-     ## add coordinates to each sample
-     coor_df = data.frame(matrix(ncol=3, nrow=0))
-     for (n in unique(micro_sites[,"samples"])) {
-       
-       coor_df = rbind(coor_df, all_coordinates[which(all_coordinates[,"ID"] == n),c("ID","latitude", "longitude")])
-       
-     }
-     names(coor_df)[1] = "samples"
-     micro_sites = merge(micro_sites, coor_df, by="samples")
-     
-     ## load shapefiles
-     sf_use_s2(FALSE)
-     brisbane_waterbodies = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Brisbane wetland areas/Wetland_areas.shp")
-     brisbane_waterbodies = st_make_valid(brisbane_waterbodies)
-     brisbane_waterbodies = st_crop(brisbane_waterbodies, c(xmin = min(all_coordinates[,"longitude"])-0.01,
-                                                            xmax = max(all_coordinates[,"longitude"])+0.05,
-                                                            ymin = -max(all_coordinates[,"latitude"])-0.05,
-                                                            ymax = -min(all_coordinates[,"latitude"])+0.05))
-                                            
-     brisbane_coastline = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Brisbane coastline/Coastline.shp")
-     brisbane_coastline = st_crop(brisbane_coastline, c(xmin = min(all_coordinates[,"longitude"])-0.01,
-                                                        xmax = max(all_coordinates[,"longitude"])+0.05,
-                                                        ymin = -max(all_coordinates[,"latitude"])-0.05,
-                                                        ymax = -min(all_coordinates[,"latitude"])+0.05))
-     
-     ## align shapefiles
-     brisbane_waterbodies = st_transform(brisbane_waterbodies, st_crs(brisbane_coastline))
-     
-     ## buffer around coast
-     sf_use_s2(TRUE)
-     coast_buffer = st_buffer(brisbane_coastline, dist = 5)
-     
-     ## separate land and sea
-     is_saltwater = lengths(st_intersects(brisbane_waterbodies, coast_buffer)) > 0
-     brisbane_saltwater = brisbane_waterbodies[is_saltwater, ]
-     brisbane_freshwater = brisbane_waterbodies[!is_saltwater, ]
-     
-     ## set up plotting area
-     
-         split.screen(rbind(c(0,1,0,1),             ## main background map
-                            c(0.09,0.35,0.58,0.84), ## Australia map
-                            c(0.4,0.4,0,0.2)))      ## P10 map
+     ## prepare map of Australia
          
+         australia_outline = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Australia coastline/Australia coastline.shp")
+         australia_outline = st_make_valid(australia_outline)
+         australia_outline = st_crop(australia_outline, c(xmin = 112, xmax = 155, ymin = -10, ymax = -44))
+         australia_bb = st_bbox(australia_outline)
          
-     ## plot background map
-     
-         ## these are criminal adjustments, but I seem to need them ... 
-         xmin = min(all_coordinates[,"longitude"])-0.01
-         xmax = max(all_coordinates[,"longitude"])+0.05
-         ymin = -max(all_coordinates[,"latitude"])-0.05
-         ymax = -min(all_coordinates[,"latitude"])+0.05
+     ## prepare map of study are
          
-         ## assemble plot
-         screen(1)
-         par(mar=c(2,2.2,0.1,0.1))
-         plot(st_geometry(brisbane_freshwater), col = "dodgerblue", border = NA)
-         plot(st_geometry(brisbane_saltwater), col = "white", border = NA, add = TRUE)
-         plot(st_geometry(brisbane_coastline), col = "black", lwd = 1, add = TRUE)
-         rect(xmin, ymin, xmax, ymax,
-              col=scales::alpha("white", 0.25), border="black", lwd=1)
-         ## compute scalebar
-         #distm(rbind(c(152.36,-27.74),c(152.614, -27.74)), fun = distVincentyEllipsoid)
-         lines(x=c(152.08,152.324), y=c(-27.735,-27.735), lwd=2)
-         text(152.202, -27.72, labels="25km")
-         ## north pointer
-         points(152.065,-27.65,pch=17, cex=1.8)
-         lines(c(152.065,152.065), c(-27.65,-27.7),lwd=2)
-         text(152.065, -27.71, labels="N")
-         # legend(153.15, -27.138, legend=c("Lemna", "Landoltia"),
-         #        fill=c(lemna_col, landoltia_col), )
-          
+         ## number of waterbodies
+         length(unique(c(substr(colnames(landoltia_hamdist),1,3), substr(colnames(lemna_hamdist),1,3))))
          
+         ## read and transform coordinates
+         all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
+         all_coordinates$latitude = sapply(all_coordinates[,"GPS_S"], convert_dmm_to_dd)
+         all_coordinates$longitude = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
          
+         ## read micro sites data
+         micro_sites = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/micro_sites.csv", sep=";")
          
+         ## extract summary dataframe
+         micro_summary = data.frame("micro_site_ID" = character(), "lemna" = integer(), "landoltia" = integer())
+         for (n in unique(micro_sites[,"micro_site_ID"])) {
+           micro_runner = micro_sites[which(micro_sites[,"micro_site_ID"] == n),, drop=FALSE]
+           filler_row = data.frame("micro_site_ID" = n,
+                                   "lemna" = sum(micro_runner[,"species"] == "lemna"), 
+                                   "landoltia" = sum(micro_runner[,"species"] == "landoltia")) 
+           micro_summary = rbind(micro_summary, filler_row)
+         }
+         micro_summary[,"sum"] = apply(micro_summary[,2:3], 1, sum)
          
+         ## combine clone datasets
+         landoltia_clone_df[19:27,] = matrix(NA, ncol=ncol(landoltia_clone_df), nrow=9)
+         total_clone_df = cbind(lemna_clone_df,landoltia_clone_df)
          
-         
-         #WIP here
-         
-         ## manual x-axis
-         xticks = pretty(xmin:xmax-0.02)[2:7]
-         segments(xticks, ymin, xticks, ymin-(ymax-ymin)*0.01)
-         text(xticks, ymin - (ymax-ymin)*0.05, labels = xticks)
-         
-         ## manual y-axis 
-         yticks = c(-27.7,-27.5,-27.3,-27.1)
-         segments(xmin, yticks, xmin-(xmax-xmin)*0.005, yticks)
-         mtext(side = 2, at = yticks, text = yticks, las = 1, line = -0.5)
-         
-         ## extract waterbody data
-         waterbody_map = data.frame(matrix(0, ncol=6,nrow = 0))
-         m=0; for (n in unique(substr(micro_sites[,"micro_site_ID"],1,3))){
+         ## add clone col to micro_sites 
+         clone_vec = rep(NA, nrow(micro_sites))
+         for (n in colnames(total_clone_df)) {
            
-           m=m+1
+           runner_col = total_clone_df[,n]
+           clone_vec[which(micro_sites[,"samples"] %in% runner_col)] = n
            
-           ## extract average coordinates
-           runner_waterbody_site = micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == n),]
-           runner_coor = all_coordinates[which(all_coordinates[,"ID"] %in% runner_waterbody_site[,"samples"]),]
-           
-           waterbody_map[m,1] = n
-           waterbody_map[m,2] = mean(runner_coor[,"latitude"])
-           waterbody_map[m,3] = mean(runner_coor[,"longitude"])
-           waterbody_map[m,4] = length(which(substr(runner_coor[,"species"],1,2) == "Le"))
-           waterbody_map[m,5] = length(which(substr(runner_coor[,"species"],1,2) == "La"))
-           waterbody_map[m,6] = waterbody_map[m,4] + waterbody_map[m,5]
            
          }
-         colnames(waterbody_map) = c("micro","long", "lat", "lemna", "landoltia", "total")    
-         waterbody_map[,"long"] = as.numeric(waterbody_map[,"long"]);waterbody_map[,"lat"] = as.numeric(waterbody_map[,"lat"])
-         waterbody_map[,"lemna"] = as.numeric(waterbody_map[,"lemna"]);waterbody_map[,"landoltia"] = as.numeric(waterbody_map[,"landoltia"])
-         waterbody_map[,"total"] = as.numeric(waterbody_map[,"total"])
+         micro_sites[,"clone"] = clone_vec
          
-         ## change coordinates for pie charts that need moving
-         ## add lines from original position to new position
-         
-         
-         ## draw offset lines
-         lines(c(waterbody_map[6,"lat"], waterbody_map[6,"lat"]),
-               c(-waterbody_map[6,"long"], -waterbody_map[6,"long"]+0.04), lwd=1.5)
-         lines(c(waterbody_map[8,"lat"], waterbody_map[8,"lat"]-0.04),
-               c(-waterbody_map[8,"long"], -waterbody_map[8,"long"]), lwd=1.5)
-         lines(c(waterbody_map[12,"lat"], waterbody_map[12,"lat"]+0.04),
-               c(-waterbody_map[12,"long"], -waterbody_map[12,"long"]), lwd=1.5)
-         lines(c(waterbody_map[13,"lat"], waterbody_map[13,"lat"]),
-               c(-waterbody_map[13,"long"], -waterbody_map[13,"long"]-0.04), lwd=1.5)
-         lines(c(waterbody_map[16,"lat"], waterbody_map[16,"lat"]+0.04),
-               c(-waterbody_map[16,"long"], -waterbody_map[16,"long"]), lwd=1.5)
-         lines(c(waterbody_map[17,"lat"], waterbody_map[17,"lat"]-0.04),
-               c(-waterbody_map[17,"long"], -waterbody_map[17,"long"]), lwd=1.5)
-         lines(c(waterbody_map[18,"lat"], waterbody_map[18,"lat"]),
-               c(-waterbody_map[18,"long"], -waterbody_map[18,"long"]-0.04), lwd=1.5)
-         lines(c(waterbody_map[20,"lat"], waterbody_map[20,"lat"]),
-               c(-waterbody_map[20,"long"], -waterbody_map[20,"long"]-0.04), lwd=1.5)
-         lines(c(waterbody_map[24,"lat"], waterbody_map[24,"lat"]+0.04),
-               c(-waterbody_map[24,"long"], -waterbody_map[24,"long"]), lwd=1.5)
-         lines(c(waterbody_map[30,"lat"], waterbody_map[30,"lat"]+0.04),
-               c(-waterbody_map[30,"long"], -waterbody_map[30,"long"]), lwd=1.5)
-         lines(c(waterbody_map[31,"lat"], waterbody_map[31,"lat"]-0.04),
-               c(-waterbody_map[31,"long"], -waterbody_map[31,"long"]), lwd=1.5)
-         
-         
-         ## adjust pie location
-         waterbody_map[6,"long"] = waterbody_map[6,"long"]-0.04
-         waterbody_map[8,"lat"] = waterbody_map[8,"lat"]-0.04
-         waterbody_map[12,"long"] = waterbody_map[12,"long"]+0.04
-         waterbody_map[13,"lat"] = waterbody_map[13,"lat"]+0.04
-         waterbody_map[16,"lat"] = waterbody_map[16,"lat"]+0.04
-         waterbody_map[17,"lat"] = waterbody_map[17,"lat"]-0.04
-         waterbody_map[18,"long"] = waterbody_map[18,"long"]+0.04
-         waterbody_map[20,"long"] = waterbody_map[20,"long"]+0.04
-         waterbody_map[24,"lat"] = waterbody_map[24,"lat"]+0.04
-         waterbody_map[30,"lat"] = waterbody_map[30,"lat"]+0.04
-         waterbody_map[31,"lat"] = waterbody_map[31,"lat"]-0.04
-         
-         
-         for (n in 1:nrow(waterbody_map)) {
-         floating.pie(xpos=waterbody_map[n,"lat"], ypos=-waterbody_map[n,"long"], 
-                      x=c(waterbody_map[n,4], waterbody_map[n,5]), radius=0.017,
-                      col=c(lemna_col, landoltia_col),
-                      edges=1000)
+         ## add coordinates to each sample
+         coor_df = data.frame(matrix(ncol=3, nrow=0))
+         for (n in unique(micro_sites[,"samples"])) {
+           
+           coor_df = rbind(coor_df, all_coordinates[which(all_coordinates[,"ID"] == n),c("ID","latitude", "longitude")])
+           
          }
+         names(coor_df)[1] = "samples"
+         micro_sites = merge(micro_sites, coor_df, by="samples")
          
+         ## load shapefiles
+         sf_use_s2(FALSE)
+         brisbane_waterbodies = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Brisbane wetland areas/Wetland_areas.shp")
+         brisbane_waterbodies = st_make_valid(brisbane_waterbodies)
+         brisbane_waterbodies = st_crop(brisbane_waterbodies, c(xmin = min(all_coordinates[,"longitude"])-0.01, xmax = max(all_coordinates[,"longitude"])+0.05,
+                                                                ymin = -max(all_coordinates[,"latitude"])-0.05, ymax = -min(all_coordinates[,"latitude"])+0.05))
          
-         close.screen(1)
+         brisbane_coastline = read_sf("C:/Users/timte/Desktop/Brisbane/Chapter 1/Brisbane coastline/Coastline.shp")
+         brisbane_coastline = st_crop(brisbane_coastline, c(xmin = min(all_coordinates[,"longitude"])-0.01, xmax = max(all_coordinates[,"longitude"])+0.05,
+                                                            ymin = -max(all_coordinates[,"latitude"])-0.05, ymax = -min(all_coordinates[,"latitude"])+0.05))
          
-     ## plot P10 inlet
+         ## align shapefiles
+         brisbane_waterbodies = st_transform(brisbane_waterbodies, st_crs(brisbane_coastline))
+         
+         ## buffer around coast
+         sf_use_s2(TRUE)
+         coast_buffer = st_buffer(brisbane_coastline, dist = 5)
+         
+         ## separate land and sea
+         is_saltwater = lengths(st_intersects(brisbane_waterbodies, coast_buffer)) > 0
+         brisbane_saltwater = brisbane_waterbodies[is_saltwater, ]
+         brisbane_freshwater = brisbane_waterbodies[!is_saltwater, ]
+    
+     ## prepare map of P10
      
          ## find micro sites
          P10_microsite_plotter = data.frame(matrix(0, ncol=6,nrow = 0))
@@ -892,21 +793,144 @@
          P10_coordinates = all_coordinates[which(substr(all_coordinates[,"ID"],1,3) == "P10"),]
          
          ## cut shapefile
-         P10_shapefile = st_crop(brisbane_waterbodies, c(xmin = min(P10_coordinates[,"longitude"]),
-                                                         xmax = max(P10_coordinates[,"longitude"]),
-                                                         ymin = -max(P10_coordinates[,"latitude"]),
-                                                         ymax = -min(P10_coordinates[,"latitude"])))
+         P10_shapefile = st_crop(brisbane_waterbodies, c(xmin = min(P10_coordinates[,"longitude"]), xmax = max(P10_coordinates[,"longitude"]),
+                                                         ymin = -max(P10_coordinates[,"latitude"]), ymax = -min(P10_coordinates[,"latitude"])))
+         bb = st_bbox(P10_shapefile)
          
-         # extend a little to the right for plotting piecharts
-         bb <- st_bbox(P10_shapefile)
-         xlim <- c(bb["xmin"]-0.00008, bb["xmax"]+0.00008)
-         ylim <- c(bb["ymin"]-0.00008, bb["ymax"]+0.00008)
+         
+     ## assemble plot
+         
+         png("test7.png", width = 7, height = 5, units = "in", res = 600)
+         split.screen(rbind(c(0,1,0,1),                ## Study area
+                            c(0.07,0.27,0.65,0.85),    ## Australia
+                            c(0.35,0.6,0.2,0.55)))     ## P10
+         
+     ## Study area
+         
+         ## somehow necessary adjustments
+         xmin = min(all_coordinates[,"longitude"])-0.01
+         xmax = max(all_coordinates[,"longitude"])+0.05
+         ymin = -max(all_coordinates[,"latitude"])-0.05
+         ymax = -min(all_coordinates[,"latitude"])+0.05
          
          ## assemble plot
+         screen(1)
+         par(mar=c(1,1,0,0))
+         plot(st_geometry(brisbane_freshwater), col = "dodgerblue", border = NA)
+         plot(st_geometry(brisbane_saltwater), col = "white", border = NA, add = TRUE)
+         plot(st_geometry(brisbane_coastline), col = "black", lwd = 1, add = TRUE)
+         rect(min(all_coordinates[,"longitude"])-0.01, -max(all_coordinates[,"latitude"])-0.05, max(all_coordinates[,"longitude"])+0.05, -min(all_coordinates[,"latitude"])+0.05,
+              col=scales::alpha("white", 0.25), border="black", lwd=1)
+         
+         ## add legend, north arrow and scalebar
+         legend(152.06, -27.13, legend=c(expression(italic("Landoltia")), expression(italic("Lemna"))),
+                pch=21, pt.bg = c(landoltia_col, lemna_col), pt.cex = 1.7)
+         north_poly(153.3,-27.18, size=0.08)
+         text(153.3, -27.15, "N")
+         lines(x=c(152.05,152.321), y=c(-27.3,-27.3), lwd=2)
+         text(152.202, -27.278, labels="25km")
+         
+         ## manual x-axis
+         xticks = pretty(xmin:xmax-0.02)[2:7]
+         segments(xticks, ymin, xticks, ymin-(ymax-ymin)*0.01)
+         text(xticks, ymin - (ymax-ymin)*0.05, labels = xticks, cex=0.8)
+         
+         ## manual y-axis 
+         yticks = c(-27.7,-27.6,-27.5,-27.4,-27.3,-27.2)
+         segments(xmin, yticks, xmin-(xmax-xmin)*0.005, yticks)
+         mtext(side = 2, at = yticks, text = yticks, las = 1, line = -0.8, cex=0.8)
+         
+         ## extract waterbody data
+         waterbody_map = data.frame(matrix(0, ncol=6,nrow = 0))
+         m=0; for (n in unique(substr(micro_sites[,"micro_site_ID"],1,3))){
+           
+           m=m+1
+           
+           ## extract average coordinates
+           runner_waterbody_site = micro_sites[which(substr(micro_sites[,"micro_site_ID"],1,3) == n),]
+           runner_coor = all_coordinates[which(all_coordinates[,"ID"] %in% runner_waterbody_site[,"samples"]),]
+           
+           waterbody_map[m,1] = n
+           waterbody_map[m,2] = mean(runner_coor[,"latitude"])
+           waterbody_map[m,3] = mean(runner_coor[,"longitude"])
+           waterbody_map[m,4] = length(which(substr(runner_coor[,"species"],1,2) == "Le"))
+           waterbody_map[m,5] = length(which(substr(runner_coor[,"species"],1,2) == "La"))
+           waterbody_map[m,6] = waterbody_map[m,4] + waterbody_map[m,5]
+           
+         }
+         colnames(waterbody_map) = c("micro","long", "lat", "lemna", "landoltia", "total")    
+         waterbody_map[,"long"] = as.numeric(waterbody_map[,"long"]);waterbody_map[,"lat"] = as.numeric(waterbody_map[,"lat"])
+         waterbody_map[,"lemna"] = as.numeric(waterbody_map[,"lemna"]);waterbody_map[,"landoltia"] = as.numeric(waterbody_map[,"landoltia"])
+         waterbody_map[,"total"] = as.numeric(waterbody_map[,"total"])
+         
+         ## draw offset lines
+         lines(c(waterbody_map[6,"lat"], waterbody_map[6,"lat"]),
+               c(-waterbody_map[6,"long"], -waterbody_map[6,"long"]+0.04), lwd=1.5)
+         lines(c(waterbody_map[8,"lat"], waterbody_map[8,"lat"]-0.04),
+               c(-waterbody_map[8,"long"], -waterbody_map[8,"long"]), lwd=1.5)
+         lines(c(waterbody_map[12,"lat"], waterbody_map[12,"lat"]+0.04),
+               c(-waterbody_map[12,"long"], -waterbody_map[12,"long"]), lwd=1.5)
+         lines(c(waterbody_map[13,"lat"], waterbody_map[13,"lat"]),
+               c(-waterbody_map[13,"long"], -waterbody_map[13,"long"]-0.04), lwd=1.5)
+         lines(c(waterbody_map[16,"lat"], waterbody_map[16,"lat"]+0.04),
+               c(-waterbody_map[16,"long"], -waterbody_map[16,"long"]), lwd=1.5)
+         lines(c(waterbody_map[17,"lat"], waterbody_map[17,"lat"]-0.04),
+               c(-waterbody_map[17,"long"], -waterbody_map[17,"long"]), lwd=1.5)
+         lines(c(waterbody_map[18,"lat"], waterbody_map[18,"lat"]),
+               c(-waterbody_map[18,"long"], -waterbody_map[18,"long"]-0.04), lwd=1.5)
+         lines(c(waterbody_map[20,"lat"], waterbody_map[20,"lat"]),
+               c(-waterbody_map[20,"long"], -waterbody_map[20,"long"]-0.04), lwd=1.5)
+         lines(c(waterbody_map[24,"lat"], waterbody_map[24,"lat"]+0.04),
+               c(-waterbody_map[24,"long"], -waterbody_map[24,"long"]), lwd=1.5)
+         lines(c(waterbody_map[30,"lat"], waterbody_map[30,"lat"]+0.04),
+               c(-waterbody_map[30,"long"], -waterbody_map[30,"long"]), lwd=1.5)
+         lines(c(waterbody_map[31,"lat"], waterbody_map[31,"lat"]),
+               c(-waterbody_map[31,"long"], -waterbody_map[31,"long"]-0.04), lwd=1.5)
+         
+         ## adjust pie location
+         waterbody_map[6,"long"] = waterbody_map[6,"long"]-0.04
+         waterbody_map[8,"lat"] = waterbody_map[8,"lat"]-0.04
+         waterbody_map[12,"long"] = waterbody_map[12,"long"]+0.04
+         waterbody_map[13,"lat"] = waterbody_map[13,"lat"]+0.04
+         waterbody_map[16,"lat"] = waterbody_map[16,"lat"]+0.04
+         waterbody_map[17,"lat"] = waterbody_map[17,"lat"]-0.04
+         waterbody_map[18,"long"] = waterbody_map[18,"long"]+0.04
+         waterbody_map[20,"long"] = waterbody_map[20,"long"]+0.04
+         waterbody_map[24,"lat"] = waterbody_map[24,"lat"]+0.04
+         waterbody_map[30,"lat"] = waterbody_map[30,"lat"]+0.04
+         waterbody_map[31,"long"] = waterbody_map[31,"long"]+0.04
+         
+         ## plot pie charts
+         for (n in 1:nrow(waterbody_map)) {
+           floating.pie(xpos=waterbody_map[n,"lat"], ypos=-waterbody_map[n,"long"], 
+                        x=c(waterbody_map[n,4], waterbody_map[n,5]), radius=0.017,
+                        col=c(lemna_col, landoltia_col),
+                        edges=1000)
+         }
+         
+         ## add markers for deep sampled ponds
+         text(waterbody_map[1,"lat"], -waterbody_map[1,"long"],labels="P10", pos=1, cex = 0.7)
+         text(waterbody_map[5,"lat"], -waterbody_map[5,"long"],labels="P14", pos=3, cex = 0.7)
+         text(waterbody_map[10,"lat"], -waterbody_map[10,"long"],labels="P19", pos=1, cex = 0.7)
+         text(waterbody_map[19,"lat"], -waterbody_map[19,"long"],labels="P27", pos=2, cex = 0.7)
+         text(waterbody_map[28,"lat"], -waterbody_map[28,"long"],labels="P36", pos=2, cex = 0.7)
+         close.screen(1)
+         
+     ## Australia map
+         
          screen(2)
+         par(mar=c(0,0,0,0), plt = c(0,1,0,1))
+         plot(st_geometry(australia_outline))
+         points(153.029764, -27.452343, pch=21, cex=2, bg="dodgerblue")
+         rect(australia_bb["xmin"], australia_bb["ymin"], australia_bb["xmax"], australia_bb["ymax"],border="black", lwd=1)
+         close.screen(2)
+         
+     ## Deep sampled waterbody
+         
+         screen(3)
          par(mar=c(0,0,0,0))
          plot(st_geometry(P10_shapefile), col = "dodgerblue", border = NA,
-              xlim = xlim, ylim = ylim)
+              xlim = c(bb["xmin"]-0.00008, bb["xmax"]+0.00008), ylim = c(bb["ymin"]-0.00008, bb["ymax"]+0.00008))
          rect(bb["xmin"]-0.00006, bb["ymin"]-0.0001, bb["xmax"]+0.00008, bb["ymax"]+0.00006,border="black", lwd=1)
          text(153.0644,-27.54035, labels="P10")
          
@@ -920,269 +944,173 @@
            floating.pie(xpos=P10_microsite_plotter[,"lat"][n], ypos=-P10_microsite_plotter[,"long"][n], 
                         x=c(P10_microsite_plotter[,4][n], P10_microsite_plotter[,5][n]), col=c(landoltia_col, lemna_col),
                         edges=1000, radius = 0.00003)
-     }
-         close.screen(2)
+         }
+         close.screen(3)
          close.screen(all.screens = TRUE)
+         dev.off()
          
-     ## MICRO SITE: competitive environment ####
-     
-     # make categories for stacked barplot
-     micro_summary[,"group"] = ifelse(micro_summary[,"lemna"] > 0 & micro_summary[,"landoltia"] == 0, "lemna",
-                                      ifelse(micro_summary[,"landoltia"] > 0 & micro_summary[,"lemna"] == 0, "landoltia",
-                                             ifelse(micro_summary[,"lemna"] > 0 & micro_summary[,"landoltia"] > 0, "both", NA)))
-    
-     ## get abundances per species
-     lemna_counts = table(factor(micro_summary[,"sum"][micro_summary[,"group"] == "lemna"], levels = 1:6))
-     landoltia_counts = table(factor(micro_summary[,"sum"][micro_summary[,"group"] == "landoltia"], levels = 1:6))
-     both_counts = table(factor(micro_summary[,"sum"][micro_summary[,"group"] == "both"], levels = 1:6))
-     
-     ## assembly plotter dataframe
-     stacked_barplotter = rbind(lemna_counts, landoltia_counts, both_counts)
-     
-     ## two species within micro site diversity
-    
-     ## calculate average within site distances for competitive environment plot
-     micro_distance = data.frame("micro_site_ID" = character(), 
-                                 "lemna_avg_distance" = integer(), "lemna_sd_distance" = integer(),
-                                 "landoltia_avg_distanc" = integer(), "landoltia_sd_distance" = integer())
-     for (n in unique(micro_sites[,"micro_site_ID"])) {
-       
-       micro_runner = micro_sites[which(micro_sites[,"micro_site_ID"] == n),, drop=FALSE]
-       
-       ## extract subset from lemna_hamdist from micro site
-       runner_lemna_dist = lemna_hamdist[which(colnames(lemna_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "lemna"),][,"samples"]),which(colnames(lemna_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "lemna"),][,"samples"])]
-       
-       ## extract subset from landoltia_hamdist from micro site
-       runner_landoltia_dist = landoltia_hamdist[which(colnames(landoltia_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "landoltia"),][,"samples"]),which(colnames(landoltia_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "landoltia"),][,"samples"])]
-       
-       ## compute mean
-       filler_row = data.frame("micro_site_ID" = n,
-                               "lemna_avg_distance" = if(length(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]) == 0) NA else mean(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]),
-                               "lemna_sd_distance" = sd(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]),
-                               "landoltia_avg_distance" = if(length(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)]) == 0) NA else mean(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)]),
-                               "landoltia_sd_distance" = sd(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)])) 
-       micro_distance = rbind(micro_distance, filler_row)
-     }
-     
-     ## merge to micro_summary and retain only those with 2 or more individuals
-     micro_scatter_plotter_full = merge(micro_summary, micro_distance, by="micro_site_ID")
-     micro_scatter_plotter = micro_scatter_plotter_full[which(micro_scatter_plotter_full[,"lemna"] >= 2 & micro_scatter_plotter_full[,"landoltia"] >= 2),]
          
-     ## permutations for histogram
-     landoltia_perm_mean = vector(); lemna_perm_mean = vector()
-     for (n in 1:100000) {
-       sim_size = sample(2:3,1)
-       runner_landoltia_sample = sample(colnames(landoltia_hamdist), sim_size)
-       runner_lemna_sample = sample(colnames(lemna_hamdist), sim_size)
-       runner_landoltia_matrix = landoltia_hamdist[runner_landoltia_sample,runner_landoltia_sample]
-       runner_lemna_matrix = lemna_hamdist[runner_lemna_sample,runner_lemna_sample]
-       landoltia_perm_mean[n] = mean(runner_landoltia_matrix[lower.tri(runner_landoltia_matrix, diag=FALSE)])
-       lemna_perm_mean[n] = mean(runner_lemna_matrix[lower.tri(runner_lemna_matrix, diag=FALSE)])
-     }
-     
-     ## set up screens
-     
-         split.screen(rbind(c(0, 0.8, 0, 0.8),     ## scatterplot 
-                            c(0.82, 1, 0, 0.8),    ## y-axis (landoltia)
-                            c(0, 0.8, 0.82, 1)))   ## x-axis (lemna)
          
-          
-     ## scatterplot
          
+         
+         
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     ## set up plotting area
+     
+         
+         
+     ## plot background map
+     
+         
+     ## plot P10 inlet
+     
+         
+         ## assemble plot
+         
+     ## MICRO SITE: scatterplot + heatmaps ####
+     
+     ## prepare data
+         
+         ## calculate average within site distances for competitive environment plot
+         micro_distance = data.frame("micro_site_ID" = character(), 
+                                     "lemna_avg_distance" = integer(), "lemna_sd_distance" = integer(),
+                                     "landoltia_avg_distanc" = integer(), "landoltia_sd_distance" = integer())
+         for (n in unique(micro_sites[,"micro_site_ID"])) {
+           
+           micro_runner = micro_sites[which(micro_sites[,"micro_site_ID"] == n),, drop=FALSE]
+           
+           ## extract subset from lemna_hamdist from micro site
+           runner_lemna_dist = lemna_hamdist[which(colnames(lemna_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "lemna"),][,"samples"]),which(colnames(lemna_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "lemna"),][,"samples"])]
+           
+           ## extract subset from landoltia_hamdist from micro site
+           runner_landoltia_dist = landoltia_hamdist[which(colnames(landoltia_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "landoltia"),][,"samples"]),which(colnames(landoltia_hamdist) %in% micro_runner[which(micro_runner[,"species"] == "landoltia"),][,"samples"])]
+           
+           ## compute mean
+           filler_row = data.frame("micro_site_ID" = n,
+                                   "lemna_avg_distance" = if(length(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]) == 0) NA else mean(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]),
+                                   "lemna_sd_distance" = sd(runner_lemna_dist[lower.tri(runner_lemna_dist, diag=FALSE)]),
+                                   "landoltia_avg_distance" = if(length(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)]) == 0) NA else mean(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)]),
+                                   "landoltia_sd_distance" = sd(runner_landoltia_dist[lower.tri(runner_landoltia_dist, diag=FALSE)])) 
+           micro_distance = rbind(micro_distance, filler_row)
+         }
+         
+         ## merge to micro_summary and retain only those with 2 or more individuals
+         micro_scatter_plotter_full = merge(micro_summary, micro_distance, by="micro_site_ID")
+         micro_scatter_plotter = micro_scatter_plotter_full[which(micro_scatter_plotter_full[,"lemna"] >= 2 & micro_scatter_plotter_full[,"landoltia"] >= 2),]
+         
+         ## null model permutations
+         landoltia_perm_mean = vector(); lemna_perm_mean = vector()
+         for (n in 1:100000) {
+           sim_size = sample(2:3,1)
+           runner_landoltia_sample = sample(colnames(landoltia_hamdist), sim_size)
+           runner_lemna_sample = sample(colnames(lemna_hamdist), sim_size)
+           runner_landoltia_matrix = landoltia_hamdist[runner_landoltia_sample,runner_landoltia_sample]
+           runner_lemna_matrix = lemna_hamdist[runner_lemna_sample,runner_lemna_sample]
+           landoltia_perm_mean[n] = mean(runner_landoltia_matrix[lower.tri(runner_landoltia_matrix, diag=FALSE)])
+           lemna_perm_mean[n] = mean(runner_lemna_matrix[lower.tri(runner_lemna_matrix, diag=FALSE)])
+         }
+         
+         ## observed and null model distributions
+         lan_null = landoltia_perm_mean[1:100]
+         lem_null = lemna_perm_mean[1:100]
+         lan_true = micro_scatter_plotter[,"landoltia_avg_distance"]
+         lem_true = micro_scatter_plotter[,"lemna_avg_distance"]
+         
+         ## create common grid for heatmap plotting
+         xbreaks = seq(min(c(lan_null, lem_null, lan_true, lem_true)),
+                        max(c(lan_null, lem_null, lan_true, lem_true)), length = 30)
+         ybreaks = xbreaks  # same grid for Y axis
+         
+         ## combine 1D distributions into 2D distributions 
+         dens1_y = density(lan_null, from = min(xbreaks), to = max(xbreaks), n = 30)$y
+         dens1_x = density(lem_null, from = min(ybreaks), to = max(ybreaks), n = 30)$y
+         null_dist = outer(dens1_x, dens1_y)
+         
+         dens2_y = density(lan_true, from = min(xbreaks), to = max(xbreaks), n = 30)$y
+         dens2_x = density(lem_true, from = min(ybreaks), to = max(ybreaks), n = 30)$y
+         obs_dist = outer(dens2_x, dens2_y)
+         
+         # Transparent colour palettes
+         heat_map_col = alpha(topo.colors(20), 0.5)
+         
+     ## assemble plot
+     
+         split.screen(rbind(c(0, 0.5, 0, 1),     ## scatterplot 
+                            c(0.5, 1, 0.5, 1),   ## actual heatmap
+                            c(0.5, 1, 0, 0.5)))  ## null-model heatmap
+         
+         
+         ## scatterplot
          screen(1)
-         par(mar=c(4.1,4.1,0,0))
-         plot(NULL, xlab=expression("genetic distance within micro site (" * italic("L. aequinoctialis" * ")")),
-              ylab=expression("genetic distance within micro site (" * italic("L. punctata" * ")")),
-              xlim=c(0,max(lemna_perm_mean)), ylim=c(0,max(landoltia_perm_mean)))
-         
-         ## x=y under the points
+         par(mar=c(2.2,2.2,2.2,1.2), tck = -0.02, mgp = c(1.25, 0.3, 0), xaxs = "i", yaxs = "i")
+         plot(NULL, xlab=expression("genetic distance within micro site (" * italic("Lemna" * ")")),
+              ylab=expression("genetic distance within micro site (" * italic("Landoltia" * ")")),
+              xlim=c(-0.005,0.334), ylim=c(-0.005,0.334), xaxt="n", yaxt="n", cex.lab=0.8,
+              main="Micro site genetic patterns", cex.main=0.9)
+         axis(1, cex.axis=0.7)
+         axis(2, cex.axis=0.7)
          abline(a = 0, b = 1, lty=2, lwd=2, col="gray50")
          
          ## micro points
          points(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"],
-                pch= 21,
+                pch= 21, cex=1.5,
                 bg=ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P10", P10_col,
                           ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P14", P14_col,
                                  ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P19", P19_col,
                                         ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P27", P27_col,
-                                               ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P36", P36_col, rest_col))))),
-                cex=2)
+                                               ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P36", P36_col, rest_col))))))
          
          
          ## legend on top of the points/line                                              
-         legend("topright", legend=c("P14", "P19", "P27", "P36", "other"),
+         legend("topleft", legend=c("P14", "P19", "P27", "P36", "other"),
                 pt.bg=c(P14_col, P19_col, P27_col, P36_col, rest_col),
-                pch=21, bty="n", pt.cex = 2)
+                pch=21, bty="n", pt.cex = 1.5)
          close.screen(1)
-     
-     ## add landoltia histogram
          
+         ## observed heatmap
          screen(2)
-         par(mgp=c(1,0,0))
-         landoltia_breaks = pretty(range(landoltia_perm_mean), n=20)
-         landoltia_micro_hist = hist(micro_scatter_plotter[,"landoltia_avg_distance"], breaks=landoltia_breaks, plot=FALSE)
-         landoltia_global_hist = hist(landoltia_perm_mean, breaks=landoltia_breaks, plot=FALSE)
-         ## assemble plot
-         par(mar=c(4,0,0,0.5))
-         plot(0, 0, type = "n", xlim = c(0, max(landoltia_micro_hist$density, landoltia_global_hist$density)), ylim = c(0,max(landoltia_perm_mean)), axes = FALSE, xlab = "Density", ylab = "")
-         ## plot global
-         for (n in seq_along(landoltia_global_hist$density)) {rect(0, landoltia_global_hist$breaks[n], landoltia_global_hist$density[n], landoltia_global_hist$breaks[n+1], col = both_col, border = "black")}
-         ## plot micro
-         for (n in seq_along(landoltia_micro_hist$density)) {rect(0, landoltia_micro_hist$breaks[n], landoltia_micro_hist$density[n], landoltia_micro_hist$breaks[n+1], col = scales::alpha(landoltia_col,0.75), border = "black")}
-         box()
-         legend("topright", col=c(landoltia_col, both_col),legend=c("micro", "global"), pch=15, bty="n")
+         par(mar=c(2.2,2.2,2.2,1.2), tck = -0.02, mgp = c(1.25, 0.3, 0), xaxs = "i", yaxs = "i")
+         image(xbreaks, ybreaks, obs_dist, col = heat_map_col,
+               xaxt="n", yaxt="n",
+               xlab=expression("Micro site genetic distance (" * italic("Lemna" * ")")),
+               ylab=expression("Micro site genetic distance (" * italic("Landoltia" * ")")),
+               cex.lab=0.8, 
+               cex.main=0.9,  main="Observed genetic distance distribution")
+         axis(1, cex.axis=0.7)
+         axis(2, cex.axis=0.7)
          close.screen(2)
          
-     ## add lemna histogram
-         
+         ## null model heatmap
          screen(3)
-         par(mgp=c(1,0,0))
-         lemna_breaks = pretty(range(lemna_perm_mean), n=20)
-         lemna_micro_hist = hist(micro_scatter_plotter[,"lemna_avg_distance"], breaks=lemna_breaks, plot=FALSE)
-         lemna_global_hist = hist(lemna_perm_mean, breaks=lemna_breaks, plot=FALSE)
-         ## assemble plot
-         par(mar=c(0,4,0.5,0))
-         plot(0, 0, type = "n", ylim = c(0, max(lemna_micro_hist$density, lemna_global_hist$density)), xlim = c(0,max(lemna_perm_mean)), axes = FALSE, xlab = "", ylab = "Density")
-         ## plot global
-         for (n in seq_along(lemna_global_hist$density)) {rect(lemna_global_hist$breaks[n],0, lemna_global_hist$breaks[n+1], lemna_global_hist$density[n], ,col = both_col, border = "black")}
-         ## add outlier point
-         points(0.49,2, cex=0.8, pch=21, bg=both_col)
-         ## plot micro
-         for (n in seq_along(lemna_micro_hist$density)) {rect(lemna_micro_hist$breaks[n],0, lemna_micro_hist$breaks[n+1], lemna_micro_hist$density[n], ,col = scales::alpha(lemna_col,0.75), border = "black")}
-         box()
-         legend("topright", col=c(lemna_col, both_col),legend=c("micro", "global"), pch=15, bty="n")
+         par(mar=c(2.2,2.2,2.2,1.2), tck = -0.02, mgp = c(1.25, 0.3, 0), xaxs = "i", yaxs = "i")
+         image(xbreaks, ybreaks, null_dist, col = heat_map_col, 
+               xaxt="n", yaxt="n", 
+               xlab=expression("Micro site genetic distance (" * italic("Lemna" * ")")),
+               ylab=expression("Micro site genetic distance (" * italic("Landoltia" * ")")),
+               cex.lab=0.8, 
+               cex.main = 0.9, main="Mixture null model genetic distance distribution")
+         axis(1, cex.axis=0.7)
+         axis(2, cex.axis=0.7) 
          close.screen(3)
-         
-         ## wrap it up
          close.screen(all.screens = TRUE)
-        
-     ## t test to comparing genetic distances at micro sites
-     t.test(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"], paired=FALSE)
-     
-     ## MICRO SITE: new version (Tim's feedback) ####
-     
-     micro_scatter_plotter$dif = micro_scatter_plotter[,"landoltia_avg_distance"] - micro_scatter_plotter[,"lemna_avg_distance"]
-     micro_scatter_plotter = micro_scatter_plotter[order(-micro_scatter_plotter[,"dif"]), ]
-     
-     
-     
-     # ---- 1. Define four 1D distributions ----
-     lan_null <- landoltia_perm_mean[1:100]
-     lem_null <- lemna_perm_mean[1:100]
-     lan_true <- micro_scatter_plotter[,"landoltia_avg_distance"]
-     lem_true <- micro_scatter_plotter[,"lemna_avg_distance"]
-     
-     # ---- 2. Define a common grid for the 2D heatmaps ----
-     xbreaks <- seq(min(c(lan_null, lem_null, lan_true, lem_true)),
-                    max(c(lan_null, lem_null, lan_true, lem_true)), length = 30)
-     ybreaks <- xbreaks  # same grid for Y axis
-     
-     # ---- 3. Convert 1D distributions into 2D matrices using density ----
-     dens1_y <- density(lan_null, from = min(xbreaks), to = max(xbreaks), n = 30)$y
-     dens1_x <- density(lem_null, from = min(ybreaks), to = max(ybreaks), n = 30)$y
-     z1 <- outer(dens1_x, dens1_y)  # first 2D distribution
-     
-     dens2_y <- density(lan_true, from = min(xbreaks), to = max(xbreaks), n = 30)$y
-     dens2_x <- density(lem_true, from = min(ybreaks), to = max(ybreaks), n = 30)$y
-     z2 <- outer(dens2_x, dens2_y)  # second 2D distribution
-     
-     # Transparent colour palettes
-     col1 <- alpha(topo.colors(20), 0.5)
-     col2 <- alpha(topo.colors(20), 0.5)
-     
-     
-     
-     
-     
-     split.screen(rbind(c(0, 0.5, 0, 1),     ## scatterplot 
-                        c(0.5, 1, 0.5, 1),   ## actual heatmap
-                        c(0.5, 1, 0, 0.5)))  ## null-model heatmap
-     
-     
-     screen(1)
-     par(mar=c(2.2,2.2,2.2,1.2), tck = -0.02, mgp = c(1.25, 0.3, 0), xaxs = "i", yaxs = "i")
-     plot(NULL, xlab=expression("genetic distance within micro site (" * italic("Lemna" * ")")),
-          ylab=expression("genetic distance within micro site (" * italic("Landoltia" * ")")),
-          xlim=c(-0.005,0.334), ylim=c(-0.005,0.334), xaxt="n", yaxt="n", cex.lab=0.8,
-          main="Micro site genetic patterns", cex.main=0.9)
-     axis(1, cex.axis=0.7)
-     axis(2, cex.axis=0.7)
-          
-     ## x=y under the points
-     abline(a = 0, b = 1, lty=2, lwd=2, col="gray50")
-     
-     ## micro points
-     points(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"],
-            pch= 21,
-            bg=ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P10", P10_col,
-                      ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P14", P14_col,
-                             ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P19", P19_col,
-                                    ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P27", P27_col,
-                                           ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P36", P36_col, rest_col))))),
-            cex=1.5)
-     
-     
-     ## legend on top of the points/line                                              
-     legend("topleft", legend=c("P14", "P19", "P27", "P36", "other"),
-            pt.bg=c(P14_col, P19_col, P27_col, P36_col, rest_col),
-            pch=21, bty="n", pt.cex = 1.5)
-     
-     close.screen(1)
-     
-     # Plot heatmaps
-     screen(2)
-     par(mar=c(2.2,2.2,2.2,1.2), tck = -0.02, mgp = c(1.25, 0.3, 0), xaxs = "i", yaxs = "i")
-     image(xbreaks, ybreaks, z2, col = col2,
-           xaxt="n", yaxt="n",
-           xlab=expression("Micro site genetic distance (" * italic("Lemna" * ")")),
-           ylab=expression("Micro site genetic distance (" * italic("Landoltia" * ")")),
-           cex.lab=0.8, 
-           cex.main=0.9,  main="Observed genetic distance distribution")
-     axis(1, cex.axis=0.7)
-     axis(2, cex.axis=0.7)
-     close.screen(2)
-     
-     
-     screen(3)
-     par(mar=c(2.2,2.2,2.2,1.2), tck = -0.02, mgp = c(1.25, 0.3, 0), xaxs = "i", yaxs = "i")
-     image(xbreaks, ybreaks, z1, col = col2, 
-           xaxt="n", yaxt="n", 
-           xlab=expression("Micro site genetic distance (" * italic("Lemna" * ")")),
-           ylab=expression("Micro site genetic distance (" * italic("Landoltia" * ")")),
-           cex.lab=0.8, 
-           cex.main = 0.9, main="Mixture null model genetic distance distribution")
-     axis(1, cex.axis=0.7)
-     axis(2, cex.axis=0.7) 
-     close.screen(3)
-     
-     close.screen(all.screens = TRUE)
-     
-     
-     
-     
-     
-     
-     
-     
-     # lolipop plots
-     # par(mar=c(2,2,1,1))
-     # plot(1:36, micro_scatter_plotter[,"dif"],ylab="Average genetic distance difference", xlab="micro sites", xaxt="n",
-     #      pch=21,
-     #      bg=ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P10", P10_col,
-     #                   ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P14", P14_col,
-     #                          ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P19", P19_col,
-     #                                 ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P27", P27_col,
-     #                                        ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P36", P36_col, rest_col))))))
-     # for (n in 1:nrow(micro_scatter_plotter)){segments(n, 0, n, micro_scatter_plotter[n,"dif"])}
-     # abline(h=0)
-     
-     
-     
+       
      ## WATERBODY: within vs outside distance & diversity ####
      
      ## number of iterations
-     iter = 100000
-     boot_iter = 100000
+     iter = 1000
+     boot_iter = 1000
      
      ## set screens
      split.screen(rbind(c(0, 0.55, 0.5, 1), 
@@ -3848,3 +3776,102 @@
      # legend("topleft", inset=0.01, legend=c("lemna", "landoltia", "both"),
      #        fill=c(lemna_col, landoltia_col, both_col))
      
+     ## MICRO SITE: competitive environment (side histogram version) ####
+     
+     
+     ## set up screens
+     
+     split.screen(rbind(c(0, 0.8, 0, 0.8),     ## scatterplot 
+                        c(0.82, 1, 0, 0.8),    ## y-axis (landoltia)
+                        c(0, 0.8, 0.82, 1)))   ## x-axis (lemna)
+     
+     
+     ## scatterplot
+     
+     screen(1)
+     par(mar=c(4.1,4.1,0,0))
+     plot(NULL, xlab=expression("genetic distance within micro site (" * italic("L. aequinoctialis" * ")")),
+          ylab=expression("genetic distance within micro site (" * italic("L. punctata" * ")")),
+          xlim=c(0,max(lemna_perm_mean)), ylim=c(0,max(landoltia_perm_mean)))
+     
+     ## x=y under the points
+     abline(a = 0, b = 1, lty=2, lwd=2, col="gray50")
+     
+     ## micro points
+     points(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"],
+            pch= 21,
+            bg=ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P10", P10_col,
+                      ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P14", P14_col,
+                             ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P19", P19_col,
+                                    ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P27", P27_col,
+                                           ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P36", P36_col, rest_col))))),
+            cex=2)
+     
+     
+     ## legend on top of the points/line                                              
+     legend("topright", legend=c("P14", "P19", "P27", "P36", "other"),
+            pt.bg=c(P14_col, P19_col, P27_col, P36_col, rest_col),
+            pch=21, bty="n", pt.cex = 2)
+     close.screen(1)
+     
+     ## add landoltia histogram
+     
+     screen(2)
+     par(mgp=c(1,0,0))
+     landoltia_breaks = pretty(range(landoltia_perm_mean), n=20)
+     landoltia_micro_hist = hist(micro_scatter_plotter[,"landoltia_avg_distance"], breaks=landoltia_breaks, plot=FALSE)
+     landoltia_global_hist = hist(landoltia_perm_mean, breaks=landoltia_breaks, plot=FALSE)
+     ## assemble plot
+     par(mar=c(4,0,0,0.5))
+     plot(0, 0, type = "n", xlim = c(0, max(landoltia_micro_hist$density, landoltia_global_hist$density)), ylim = c(0,max(landoltia_perm_mean)), axes = FALSE, xlab = "Density", ylab = "")
+     ## plot global
+     for (n in seq_along(landoltia_global_hist$density)) {rect(0, landoltia_global_hist$breaks[n], landoltia_global_hist$density[n], landoltia_global_hist$breaks[n+1], col = both_col, border = "black")}
+     ## plot micro
+     for (n in seq_along(landoltia_micro_hist$density)) {rect(0, landoltia_micro_hist$breaks[n], landoltia_micro_hist$density[n], landoltia_micro_hist$breaks[n+1], col = scales::alpha(landoltia_col,0.75), border = "black")}
+     box()
+     legend("topright", col=c(landoltia_col, both_col),legend=c("micro", "global"), pch=15, bty="n")
+     close.screen(2)
+     
+     ## add lemna histogram
+     
+     screen(3)
+     par(mgp=c(1,0,0))
+     lemna_breaks = pretty(range(lemna_perm_mean), n=20)
+     lemna_micro_hist = hist(micro_scatter_plotter[,"lemna_avg_distance"], breaks=lemna_breaks, plot=FALSE)
+     lemna_global_hist = hist(lemna_perm_mean, breaks=lemna_breaks, plot=FALSE)
+     ## assemble plot
+     par(mar=c(0,4,0.5,0))
+     plot(0, 0, type = "n", ylim = c(0, max(lemna_micro_hist$density, lemna_global_hist$density)), xlim = c(0,max(lemna_perm_mean)), axes = FALSE, xlab = "", ylab = "Density")
+     ## plot global
+     for (n in seq_along(lemna_global_hist$density)) {rect(lemna_global_hist$breaks[n],0, lemna_global_hist$breaks[n+1], lemna_global_hist$density[n], ,col = both_col, border = "black")}
+     ## add outlier point
+     points(0.49,2, cex=0.8, pch=21, bg=both_col)
+     ## plot micro
+     for (n in seq_along(lemna_micro_hist$density)) {rect(lemna_micro_hist$breaks[n],0, lemna_micro_hist$breaks[n+1], lemna_micro_hist$density[n], ,col = scales::alpha(lemna_col,0.75), border = "black")}
+     box()
+     legend("topright", col=c(lemna_col, both_col),legend=c("micro", "global"), pch=15, bty="n")
+     close.screen(3)
+     
+     ## wrap it up
+     close.screen(all.screens = TRUE)
+     
+     ## t test to comparing genetic distances at micro sites
+     t.test(micro_scatter_plotter[,"lemna_avg_distance"], micro_scatter_plotter[,"landoltia_avg_distance"], paired=FALSE)
+     
+     ## micro site: lolipo plot ####
+     
+     micro_scatter_plotter$dif = micro_scatter_plotter[,"landoltia_avg_distance"] - micro_scatter_plotter[,"lemna_avg_distance"]
+     micro_scatter_plotter = micro_scatter_plotter[order(-micro_scatter_plotter[,"dif"]), ]
+     
+     
+     # lolipop plots
+     par(mar=c(2,2,1,1))
+     plot(1:36, micro_scatter_plotter[,"dif"],ylab="Average genetic distance difference", xlab="micro sites", xaxt="n",
+          pch=21,
+          bg=ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P10", P10_col,
+                       ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P14", P14_col,
+                              ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P19", P19_col,
+                                     ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P27", P27_col,
+                                            ifelse(substr(micro_scatter_plotter[,"micro_site_ID"],1,3) == "P36", P36_col, rest_col))))))
+     for (n in 1:nrow(micro_scatter_plotter)){segments(n, 0, n, micro_scatter_plotter[n,"dif"])}
+     abline(h=0)
