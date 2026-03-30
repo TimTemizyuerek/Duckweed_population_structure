@@ -19,6 +19,7 @@
      library(SNPRelate) ## PCA
      library(ASRgenomics) ## PCA
      library(boot) ## for bootstrapping
+     library(car) ## ellipse()
      
      ## custom functions #### 
      
@@ -674,8 +675,7 @@
      length(which(substr(colnames(lemna_hamdist),1,3) %in% "P27"))
      length(which(substr(colnames(lemna_hamdist),1,3) %in% "P36"))
      
-     library(readxl)
-     sampling_data = read_xlsx("C:/Users/timte/Desktop/Brisbane/Chapter 1/Duckweed collection 30.12.2024 - for material methods.xlsx")
+     sampling_data = readxl::read_xlsx("C:/Users/timte/Desktop/Brisbane/Chapter 1/Duckweed collection 30.12.2024 - for material methods.xlsx")
      sampling_data = as.data.frame(sampling_data)
      
      range(as.numeric(sampling_data[,"DNA_fronds"]), na.rm=TRUE)
@@ -949,35 +949,6 @@
          dev.off()
          
          
-         
-         
-         
-         
-     
-     
-     
-     
-     
-     
-     
-     
-     
-     
-     
-     
-     
-     ## set up plotting area
-     
-         
-         
-     ## plot background map
-     
-         
-     ## plot P10 inlet
-     
-         
-         ## assemble plot
-         
      ## MICRO SITE: scatterplot + heatmaps ####
      
      ## prepare data
@@ -1105,7 +1076,7 @@
          close.screen(3)
          close.screen(all.screens = TRUE)
        
-     ## WATERBODY: within vs outside distance & diversity ####
+     ## WATERBODY: distance & diversity ####
      
      ## number of iterations
      iter = 1000
@@ -1141,16 +1112,16 @@
          }
          
          ## mean plot
-         par(mar=c(0.3,4.5,0.3,0.3))
+         par(mar=c(0.3,4.5,1.5,0.3))
          screen(1)
          ## base plot
-         plot(NULL, xlim=c(0.5,7.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", ylab="Genetic distance", las=2)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.22), xlab="", xaxt = "n", ylab="Genetic distance", las=2, main=expression(italic("Landoltia")))
          ## mean + confidence interval of population
          boot_means <- replicate(boot_iter, mean(sample(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)], replace = TRUE)))
          ci = quantile(boot_means, c(0.025, 0.975))
          arrows(x0 = 7, y0 = ci[1], x1 = 7, y1 = ci[2], angle = 90, code = 3, length = 0.05)
-         points(7, mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), pch=21, bg=landoltia_col, cex=3, lwd=2)
-         abline(v=6.5)
+         points(6, mean(landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]), pch=21, bg=landoltia_col, cex=3, lwd=2)
+         abline(v=5.5)
          ## means + confidence intervals of the deep sampled ponds
          boot_means <- replicate(boot_iter, mean(sample(landoltia_p10[lower.tri(landoltia_p10, diag=FALSE)], replace = TRUE)))
          ci = quantile(boot_means, c(0.025, 0.975))
@@ -1173,7 +1144,7 @@
          arrows(x0 = 5, y0 = ci[1], x1 = 5, y1 = ci[2], angle = 90, code = 3, length = 0.05)
          points(5, mean(landoltia_p36[lower.tri(landoltia_p36, diag=FALSE)]), pch=21, bg=landoltia_col, cex=1.5)
          ## permutation results
-         clip(0,6.5,0,0.3)
+         clip(0,5.5,0,0.3)
          abline(h=quantile(landoltia_perm_mean, probs = c(0.025, 0.975)), lty=2, lwd=1)
          clip(0,6.5,0,0.3)
          close.screen(1)
@@ -1182,15 +1153,15 @@
          par(mar=c(3,4.5,0.3,0.3))
          screen(2)
          ## base plot
-         plot(NULL, xlim=c(0.5,7.5), ylim=c(0,1.05), xlab="", main="", xaxt = "n", ylab="Diversity (Simpson)", las=2)
-         axis(1, at = 1:7, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm", "pop"))
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,1.05), xlab="", main="", xaxt = "n", ylab="Diversity (Simpson)", las=2)
+         axis(1, at = 1:6, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "pop"))
          ## plot diversity and CI for population
          data_individuals = rep(seq_along(hamdist_to_rarecurve(landoltia_hamdist)), hamdist_to_rarecurve(landoltia_hamdist))
          boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
          ci = quantile(boot_out$t, c(0.025, 0.975))
          arrows(x0 = 7, y0 = ci[1], x1 = 7, y1 = ci[2], angle = 90, code = 3, length = 0.05)
-         points(7, diversity(hamdist_to_rarecurve(landoltia_hamdist), index = "simpson"), pch=21, bg=landoltia_col, cex=3, lwd=2)
-         abline(v=6.5)
+         points(6, diversity(hamdist_to_rarecurve(landoltia_hamdist), index = "simpson"), pch=21, bg=landoltia_col, cex=3, lwd=2)
+         abline(v=5.5)
          ## plot diversity and CI for deep sampled ponds
          data_individuals = rep(seq_along(hamdist_to_rarecurve(landoltia_p10)), hamdist_to_rarecurve(landoltia_p10))
          boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
@@ -1218,8 +1189,8 @@
          arrows(x0 = 5, y0 = ci[1], x1 = 5, y1 = ci[2], angle = 90, code = 3, length = 0.05)
          points(5, diversity(hamdist_to_rarecurve(landoltia_p36), index = "simpson"), pch=21, bg=landoltia_col, cex=1.5)
          ## permutations
-         clip(0,6.5,0,4)
-         abline(h=quantile(landoltia_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=1)
+         clip(0,5.5,0,4)
+         abline(h=quantile(landoltia_perm_diversity, probs = c(0.025, 0.975)), lty=2, lwd=1)
          clip(0,6.5,0,4)
          close.screen(2)
          
@@ -1247,16 +1218,16 @@
          }
          
          ## mean plot
-         par(mar=c(0.3,0.3,0.3,0.3))
+         par(mar=c(0.3,0.3,1.5,0.3))
          screen(3)
          ## base plot
-         plot(NULL, xlim=c(0.5,7.5), ylim=c(0,0.22), xlab="", main="", xaxt = "n", yaxt="n", ylab="Genetic distance", las=2)
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,0.22), xlab="", xaxt = "n", yaxt="n", ylab="Genetic distance", las=2, main=expression(italic("Lemna")))
          ## mean + confidence interval of population
          boot_means <- replicate(boot_iter, mean(sample(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)], replace = TRUE)))
          ci = quantile(boot_means, c(0.025, 0.975))
          arrows(x0 = 7, y0 = ci[1], x1 = 7, y1 = ci[2], angle = 90, code = 3, length = 0.05)
-         points(7, mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]), pch=21, bg=lemna_col, cex=3, lwd=2)
-         abline(v=6.5)
+         points(6, mean(lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]), pch=21, bg=lemna_col, cex=3, lwd=2)
+         abline(v=5.5)
          ## means + confidence intervals of the deep sampled ponds
          boot_means <- replicate(boot_iter, mean(sample(lemna_p10[lower.tri(lemna_p10, diag=FALSE)], replace = TRUE)))
          ci = quantile(boot_means, c(0.025, 0.975))
@@ -1279,24 +1250,27 @@
          arrows(x0 = 5, y0 = ci[1], x1 = 5, y1 = ci[2], angle = 90, code = 3, length = 0.05)
          points(5, mean(lemna_p36[lower.tri(lemna_p36, diag=FALSE)]), pch=21, bg=lemna_col, cex=1.5)
          ## permutation results
-         clip(0,6.5,0,0.3)
+         clip(0,5.5,0,0.3)
          abline(h=quantile(lemna_perm_mean, probs = c(0.025, 0.975)), lty=2, lwd=1)
          clip(0,6.5,0,0.3)
+         ## permutation labels
+         text(4.5,quantile(lemna_perm_mean, probs = c(0.025, 0.975))[2]+0.01, labels="97.5th percentile", cex=0.8)
+         text(4.5,quantile(lemna_perm_mean, probs = c(0.025, 0.975))[1]+0.01, labels="2.5th percentile", cex=0.8)
          close.screen(3)
          
          ## diversity plot
          par(mar=c(3,0.3,0.3,0.3))
          screen(4)
          ## base plot
-         plot(NULL, xlim=c(0.5,7.5), ylim=c(0,1.05), xlab="", main="", xaxt = "n", yaxt = "n", ylab="Diversity (Shannon)", las=2)
-         axis(1, at = 1:7, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "perm", "pop"))
+         plot(NULL, xlim=c(0.5,6.5), ylim=c(0,1.05), xlab="", main="", xaxt = "n", yaxt = "n", ylab="Diversity (Shannon)", las=2)
+         axis(1, at = 1:6, las=2, labels = c("P10", "P14", "P19", "P27", "P36", "pop"))
          ## plot diversity and CI for population
          data_individuals = rep(seq_along(hamdist_to_rarecurve(lemna_hamdist)), hamdist_to_rarecurve(lemna_hamdist))
          boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
          ci = quantile(boot_out$t, c(0.025, 0.975))
          arrows(x0 = 7, y0 = ci[1], x1 = 7, y1 = ci[2], angle = 90, code = 3, length = 0.05)
-         points(7, diversity(hamdist_to_rarecurve(lemna_hamdist), index = "simpson"), pch=21, bg=lemna_col, cex=3, lwd=2)
-         abline(v=6.5)
+         points(6, diversity(hamdist_to_rarecurve(lemna_hamdist), index = "simpson"), pch=21, bg=lemna_col, cex=3, lwd=2)
+         abline(v=5.5)
          ## plot diversity and CI for deep sampled ponds
          data_individuals = rep(seq_along(hamdist_to_rarecurve(lemna_p10)), hamdist_to_rarecurve(lemna_p10))
          boot_out = boot(data = data_individuals, statistic = diversity_stat, R = boot_iter)
@@ -1324,125 +1298,13 @@
          arrows(x0 = 5, y0 = ci[1], x1 = 5, y1 = ci[2], angle = 90, code = 3, length = 0.05)
          points(5, diversity(hamdist_to_rarecurve(lemna_p36), index = "simpson"), pch=21, bg=lemna_col, cex=1.5)
          ## permutations
-         clip(0,6.5,0,4)
-         abline(h=quantile(lemna_perm_diversity, probs = c(0.001, 0.999)), lty=2, lwd=1)
+         clip(0,5.5,0,4)
+         abline(h=quantile(lemna_perm_diversity, probs = c(0.025, 0.975)), lty=2, lwd=1)
          clip(0,6.5,0,4)
          close.screen(4)
          
          
-     ## POPULATION: Kinship Heatmaps ####
-     
-     ## LANDOLTIA
-     
-       ## set parameters
-       col_pal = colorRampPalette(c(landoltia_col, "white"))
-       colbreaks = 10
-       clone_cutoff = 0.02
-           
-       ## set up split screen layout
-       par(mar=c(2,2,2,2),oma=c(3,3,3,3))
-       split.screen(rbind(c(0, 0.8, 0, 1), 
-                          c(0.8, 1, 0, 1)))
-       
-       ## create heatmap
-       screen(1)
-       image(1:ncol(landoltia_hamdist), 1:nrow(landoltia_hamdist),
-             landoltia_hamdist, axes = FALSE, frame=FALSE, xlab="", ylab="",
-             col=c("black",col_pal(colbreaks-2)),
-             breaks=c(0,seq(from=clone_cutoff, to=max(c(landoltia_hamdist,lemna_hamdist)), length.out = colbreaks-1)))
-       
-       
-       ## generate axis positions and labels for waterbody
-       landoltia_waterbody = unique(substr(colnames(landoltia_hamdist),1,3))
-       landoltia_waterbody_pos = vector()
-       for(n in 1:length(landoltia_waterbody)) {landoltia_waterbody_pos[n] = median(which(substr(colnames(landoltia_hamdist),1,3) == landoltia_waterbody[n]))}
-       mtext(landoltia_waterbody, side = 1, at = landoltia_waterbody_pos, cex = 0.5, line=0.5 ,las=2)
-       mtext(landoltia_waterbody, side = 2, at = landoltia_waterbody_pos, cex = 0.5, line=0.5 ,las=2)
-       
-       ## generate separating lines
-       landoltia_deep_waterbody = c("P10", "P14", "P19", "P27", "P36")
-       landoltia_deep_waterbody_pos = list()
-       for(n in 1:length(landoltia_deep_waterbody)) {
-         
-         runner_min = min(which(substr(colnames(landoltia_hamdist),1,3) == landoltia_deep_waterbody[n]))-0.5
-         runner_max = max(which(substr(colnames(landoltia_hamdist),1,3) == landoltia_deep_waterbody[n]))+0.5
-         
-         landoltia_deep_waterbody_pos[[n]] = c(runner_min, runner_max) 
-         
-         }
-       abline(v=(unlist(landoltia_deep_waterbody_pos)), col="white")  
-       abline(h=(unlist(landoltia_deep_waterbody_pos)), col="white")  
-       close.screen(1)
-       
-       ## add legend
-       screen(2)
-       par(mar=c(2,1,2,4))
-       plot(NA,type="n",ann=FALSE,xlim=c(1,2),ylim=c(0,colbreaks),xaxt="n",yaxt="n",bty="n")
-       for (n in 1:(colbreaks-1)) {rect(1,n-1,2,n, col=c("black",col_pal(colbreaks-2))[n])}
-       axis(side=4, at=c(1:(colbreaks-1))-0.5, 
-            labels=round(seq(from=min(c(landoltia_hamdist, lemna_hamdist)), 
-                             to=max(c(landoltia_hamdist, lemna_hamdist)), 
-                             length.out=colbreaks-1),2), 
-            las=2, lwd=0, lwd.ticks=1)
-       close.screen(2)
-       close.screen(all.screens=TRUE)
-       
-     ## LEMNA
-       
-       ## set parameters
-       col_pal = colorRampPalette(c(lemna_col, "white"))
-       colbreaks = 10
-       clone_cutoff = 0.02
-       
-       ## set up split screen layout
-       par(mar=c(2,2,2,2),oma=c(3,3,3,3))
-       split.screen(rbind(c(0, 0.8, 0, 1), 
-                          c(0.8, 1, 0, 1)))
-       
-       ## create heatmap
-       screen(1)
-       image(1:ncol(lemna_hamdist), 1:nrow(lemna_hamdist),
-             lemna_hamdist, axes = FALSE, frame=FALSE, xlab="", ylab="",
-             col=c("black",col_pal(colbreaks-2)),
-             breaks=c(0,seq(from=clone_cutoff, to=max(c(landoltia_hamdist,lemna_hamdist)), length.out = colbreaks-1)))
-       
-       
-       ## generate axis positions and labels for waterbody
-       lemna_waterbody = unique(substr(colnames(lemna_hamdist),1,3))
-       lemna_waterbody_pos = vector()
-       for(n in 1:length(lemna_waterbody)) {lemna_waterbody_pos[n] = median(which(substr(colnames(lemna_hamdist),1,3) == lemna_waterbody[n]))}
-       mtext(lemna_waterbody, side = 1, at = lemna_waterbody_pos, cex = 0.5, line=0.5 ,las=2)
-       mtext(lemna_waterbody, side = 2, at = lemna_waterbody_pos, cex = 0.5, line=0.5 ,las=2)
-       
-       ## generate separating lines
-       lemna_deep_waterbody = c("P10", "P14", "P19", "P27", "P36")
-       lemna_deep_waterbody_pos = list()
-       for(n in 1:length(lemna_deep_waterbody)) {
-         
-         runner_min = min(which(substr(colnames(lemna_hamdist),1,3) == lemna_deep_waterbody[n]))-0.5
-         runner_max = max(which(substr(colnames(lemna_hamdist),1,3) == lemna_deep_waterbody[n]))+0.5
-         
-         lemna_deep_waterbody_pos[[n]] = c(runner_min, runner_max) 
-         
-       }
-       abline(v=(unlist(lemna_deep_waterbody_pos)), col="white")  
-       abline(h=(unlist(lemna_deep_waterbody_pos)), col="white")  
-       close.screen(1)
-       
-       ## add legend
-       screen(2)
-       par(mar=c(2,1,2,4))
-       plot(NA,type="n",ann=FALSE,xlim=c(1,2),ylim=c(0,colbreaks),xaxt="n",yaxt="n",bty="n")
-       for (n in 1:(colbreaks-1)) {rect(1,n-1,2,n, col=c("black",col_pal(colbreaks-2))[n])}
-       axis(side=4, at=c(1:(colbreaks-1))-0.5, 
-            labels=round(seq(from=min(c(landoltia_hamdist, lemna_hamdist)), 
-                             to=max(c(landoltia_hamdist, lemna_hamdist)), 
-                             length.out=colbreaks-1),2), 
-            las=2, lwd=0, lwd.ticks=1)
-       close.screen(2)
-       close.screen(all.screens=TRUE)
-       
-     ## POPULATION: Distance Decay Plots ####
+     ## POPULATION: distance decay hexplots ####
      
      ## read and transform coordinates
      all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
@@ -1474,18 +1336,11 @@
        par(mar=c(4,4,2,0.2))
        plot(landoltia_geodist_vector, landoltia_hamdist_vector,
             pch=21, bg=landoltia_col, cex=0.6, ylim=c(-0.01,max(c(lemna_hamdist,landoltia_hamdist))),
-            xlab="Geographic distance km", 
-            ylab="Genetic distance")
-       lines(x = c(min(landoltia_geodist_vector), max(landoltia_geodist_vector)),
-             y = c(mean(landoltia_hamdist_vector), mean(landoltia_hamdist_vector)), lwd=2)
-       clip(min(landoltia_geodist_vector), max(landoltia_geodist_vector),0,0.8)
+            xlab="", 
+            ylab="Genetic distance",
+            main=expression(italic("Landoltia")))
        abline(h=0.02, lty=3, lwd=2)
-       abline(lm(landoltia_hamdist_vector ~ landoltia_geodist_vector), col="red", lwd=2)
-       
-       ## legend
-       usr = par("usr"); clip(usr[1], usr[2], usr[3], usr[4])
-       legend("topleft", inset=0.02, legend=c("mean", "model", "clone cutoff"),
-              lty=c(1,1,3), col=c("black", "red", "black"), lwd=c(2,2,2))
+       text(90, 0.03, labels="clone cut-off", cex=0.8)
        close.screen(1)
        
      ## LEMNA
@@ -1509,13 +1364,14 @@
        par(mar=c(4,0.2,2,4))
        plot(lemna_geodist_vector, lemna_hamdist_vector,
             pch=21, bg=lemna_col, cex=0.6, ylim=c(-0.01,max(c(lemna_hamdist,lemna_hamdist))),
-            xlab="Geographic distance km", ylab="", yaxt = "n")
-       lines(x = c(min(lemna_geodist_vector), max(lemna_geodist_vector)),
-             y = c(mean(lemna_hamdist_vector), mean(lemna_hamdist_vector)), lwd=2)
-       clip(min(lemna_geodist_vector), max(lemna_geodist_vector),0,0.8)
+            xlab="", ylab="", yaxt = "n",
+            main=expression(italic("Lemna")))
        abline(h=0.02, lty=3, lwd=2)
-       abline(lm(lemna_hamdist_vector ~ lemna_geodist_vector), col="red", lwd=2)
        close.screen(2)
+       
+       par(fig = c(0, 1, 0, 1), new = TRUE,mar = c(0, 0, 0, 0))
+       plot.new()
+       text(0.5, 0, "Geographic distance (km)")
        
      ## Mantel tests
      
@@ -1540,8 +1396,11 @@
      lemna_final_no_clone_pca = vcfR2genlight(lemna_final_no_clone)
      lemna_no_clone_no_missing_data = tab(lemna_final_no_clone_pca, NA.method = "mean")
      
+     ## setup split screen window
      
-     par(mfrow=c(1,2))
+     split.screen(rbind(c(0,0.5,0,1),           ## landoltia
+                        c(0.5,1,0,1),           ## lemma
+                        c(0.65,0.9,0.3,0.7)))    ## lemna zoom in
      
      ## LANDOLTIA
        
@@ -1555,22 +1414,42 @@
          landoltia_cloner = paste0("c",sub(".*?(\\d+)$", "\\1", landoltia_cloner))
          landoltia_pca_plotter$cloneID = landoltia_cloner
          
-         ## assemble plpt
+         ## assemble plot
+         screen(1)
+         par(mar=c(4,4,4,1))
          plot(landoltia_pca_plotter[,"Axis1"], landoltia_pca_plotter[,"Axis2"], 
-              xlab = paste0("PC1 (", round((dudipca_result$eig[1] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
-              ylab = paste0("PC2 (", round((dudipca_result$eig[2] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
-              main = "landoltia", pch = 21, 
-              bg = ifelse(grepl("P10", rownames(dudipca_result$li)), P10_col,
-                          ifelse(grepl("P14", rownames(dudipca_result$li)), P14_col, 
-                                 ifelse(grepl("P19", rownames(dudipca_result$li)), P19_col,
-                                        ifelse(grepl("P27", rownames(dudipca_result$li)), P27_col,
-                                               ifelse(grepl("P36", rownames(dudipca_result$li)), P36_col, rest_col))))))
+              xlab = paste0("PC1 (", round((landoltia_dudipca_result$eig[1] / sum(landoltia_dudipca_result$eig)) * 100,2),"%)", sep=""), 
+              ylab = paste0("PC2 (", round((landoltia_dudipca_result$eig[2] / sum(landoltia_dudipca_result$eig)) * 100,2),"%)", sep=""), 
+              main = expression(italic("Landoltia")), pch = 21, 
+              xlim=c(-10,60), ylim=c(-35,13),
+              bg = ifelse(grepl("P10", rownames(landoltia_dudipca_result$li)), P10_col,
+                          ifelse(grepl("P14", rownames(landoltia_dudipca_result$li)), P14_col, 
+                                 ifelse(grepl("P19", rownames(landoltia_dudipca_result$li)), P19_col,
+                                        ifelse(grepl("P27", rownames(landoltia_dudipca_result$li)), P27_col,
+                                               ifelse(grepl("P36", rownames(landoltia_dudipca_result$li)), P36_col, rest_col))))))
          text(landoltia_pca_plotter[,"Axis1"], landoltia_pca_plotter[,"Axis2"], 
-              labels=landoltia_pca_plotter[,"cloneID"], cex=0.7, pos=sample(1:4,nrow(landoltia_pca_plotter), replace = TRUE),
-              col="gray30")
+               labels=landoltia_pca_plotter[,"cloneID"], cex=0.7, pos=sample(1:4,nrow(landoltia_pca_plotter), replace = TRUE),
+               col="gray50")
          legend("bottomright", legend=c("P10","P14", "P19", "P27", "P36", "other"),
                 pt.bg=c(P10_col,P14_col, P19_col, P27_col, P36_col, rest_col),
                 pch=21, bty="n")
+         
+         
+         ## topleft cluster
+         ellipse(c(5,0), shape=matrix(c(3.5,0,0,4), ncol=2),
+                 radius=10, lwd=1.5, center.pch=FALSE, col="grey20", lty=2)
+         text(15, 10, labels="Cluster A", cex=0.7)
+         
+         ## topright cluster
+         ellipse(c(53,3.5), shape=matrix(c(4,0,0,1), ncol=2),
+                 radius=4.5, lwd=1.5, center.pch=FALSE, col="grey20", lty=2)
+         text(53, 10, labels="Cluster B", cex=0.7)
+         
+         ## bottom cluster
+         ellipse(c(0,-30), shape=matrix(c(1,0,0,1.2), ncol=2),
+                 radius=6, lwd=1.5, center.pch=FALSE, col="grey20", lty=2)
+         text(12, -30, labels="Cluster C", cex=0.7)
+         close.screen(1)
              
      ## LEMNA
      
@@ -1584,36 +1463,62 @@
          lemna_cloner = paste0("c",sub(".*?(\\d+)$", "\\1", lemna_cloner))
          lemna_pca_plotter$cloneID = lemna_cloner
          
-         ## assemble plpt
+         ## assemble plot
+         screen(2)
+         par(mar=c(4,4,4,1))
          plot(lemna_pca_plotter[,"Axis1"], lemna_pca_plotter[,"Axis2"], 
-              xlab = paste0("PC1 (", round((dudipca_result$eig[1] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
-              ylab = paste0("PC2 (", round((dudipca_result$eig[2] / sum(dudipca_result$eig)) * 100,2),"%)", sep=""), 
-              main = "lemna", pch = 21, 
-              bg = ifelse(grepl("P10", rownames(dudipca_result$li)), P10_col,
-                          ifelse(grepl("P14", rownames(dudipca_result$li)), P14_col, 
-                                 ifelse(grepl("P19", rownames(dudipca_result$li)), P19_col,
-                                        ifelse(grepl("P27", rownames(dudipca_result$li)), P27_col,
-                                               ifelse(grepl("P36", rownames(dudipca_result$li)), P36_col, rest_col))))))
+              xlab = paste0("PC1 (", round((lemna_dudipca_result$eig[1] / sum(lemna_dudipca_result$eig)) * 100,2),"%)", sep=""), 
+              ylab = paste0("PC2 (", round((lemna_dudipca_result$eig[2] / sum(lemna_dudipca_result$eig)) * 100,2),"%)", sep=""), 
+              main=expression(italic("Lemna")), pch = 21,
+              xlim=c(-50,50), ylim=c(-10,130),
+              bg = ifelse(grepl("P10", rownames(lemna_dudipca_result$li)), P10_col,
+                          ifelse(grepl("P14", rownames(lemna_dudipca_result$li)), P14_col, 
+                                 ifelse(grepl("P19", rownames(lemna_dudipca_result$li)), P19_col,
+                                        ifelse(grepl("P27", rownames(lemna_dudipca_result$li)), P27_col,
+                                               ifelse(grepl("P36", rownames(lemna_dudipca_result$li)), P36_col, rest_col))))))
+         text(lemna_pca_plotter[,"Axis1"], lemna_pca_plotter[,"Axis2"], 
+              labels=ifelse(lemna_pca_plotter[,"Axis1"] <= -2 | lemna_pca_plotter[,"Axis1"] >=6, lemna_pca_plotter[,"cloneID"], ""),
+              cex=0.7, 
+              pos=sample(1:4,nrow(lemna_pca_plotter), replace = TRUE),
+              col="gray30")
+         
+         ## top cluster
+         ellipse(c(-13,125), shape=matrix(c(1,0,0,1), ncol=2),
+                 radius=10, lwd=1.5, center.pch=FALSE, col="grey20", lty=2)
+         text(5.5, 125, labels="Cluster 1", cex=0.7)
+         
+         ## bottomleft cluster
+         ellipse(c(-42,-3), shape=matrix(c(1,0,0,1), ncol=2),
+                 radius=10, lwd=1.5, center.pch=FALSE, col="grey20", lty=2)
+         text(-42, 12, labels="Cluster 2", cex=0.7)
+         
+         ## bottomcenter cluster
+         ellipse(c(4,0), shape=matrix(c(1,0,0,1), ncol=2),
+                 radius=10, lwd=1.5, center.pch=FALSE, col="grey20", lty=2)
+         text(21, 0, labels="Cluster 3", cex=0.7)
+         
+         ## bottomright cluster
+         ellipse(c(45,2), shape=matrix(c(1,0,0,1), ncol=2),
+                 radius=10, lwd=1.5, center.pch=FALSE, col="grey20", lty=2)
+         text(45, 15, labels="Cluster 4", cex=0.7)
+         close.screen(2)
+         
+         screen(3)
+         par(mar=c(0,1,0,0))
+         plot(lemna_pca_plotter[,"Axis1"], lemna_pca_plotter[,"Axis2"], 
+              xlim=c(2.3,5.4), ylim=c(-1,0.4), pch = 21, 
+              cex.axis = 0.7, tck=-0.025, mgp = c(3,0.3,0),,
+              bg = ifelse(grepl("P10", rownames(lemna_dudipca_result$li)), P10_col,
+                          ifelse(grepl("P14", rownames(lemna_dudipca_result$li)), P14_col, 
+                                 ifelse(grepl("P19", rownames(lemna_dudipca_result$li)), P19_col,
+                                        ifelse(grepl("P27", rownames(lemna_dudipca_result$li)), P27_col,
+                                               ifelse(grepl("P36", rownames(lemna_dudipca_result$li)), P36_col, rest_col))))))
          text(lemna_pca_plotter[,"Axis1"], lemna_pca_plotter[,"Axis2"], 
               labels=lemna_pca_plotter[,"cloneID"], cex=0.7, pos=sample(1:4,nrow(lemna_pca_plotter), replace = TRUE),
               col="gray30")
-         legend("topright", legend=c("P10","P14", "P19", "P27", "P36", "other"),
-                pt.bg=c(P10_col,P14_col, P19_col, P27_col, P36_col, rest_col),
-                pch=21, bty="n")
-          
+         text(4,0.38, labels="Cluster 3", cex=0.7)
+         close.screen(3)
          
-     ## mantel test and the like ####
-     
-     library(ecodist)
-     MRM(as.dist(landoltia_hamdist) ~ as.dist(landoltia_geodist), nperm = 999)
-     
-     mantel(landoltia_hamdist,landoltia_geodist)
-     
-     
-     
-     
-     
-     
      ## STRUCTURE ANALYSIS ####
      
      ## set dir
@@ -1676,13 +1581,18 @@
      for (n in 1:length(str_list)) {
        
        runner_df = str_list[[n]]
-       mat = as.matrix(runner_df[,2:ncol(runner_df)])
-       png(filename = paste0("Lemna ",names(str_list[n]),".png"), res=100, width = 600, height=600)
        
-       bp = barplot(t(mat[,2:ncol(mat)]), col=rainbow(ncol(mat)), border=NA, space=0,
-                    xlab="Individuals", ylab="Ancestry proportion", main=names(str_list[n]),
+       # --- Sort individuals by Cluster1 descending ---
+       runner_df <- runner_df[order(-runner_df$Cluster1), ]
+       
+       mat = as.matrix(runner_df[, 2:ncol(runner_df)])
+       
+       png(filename = paste0("Lemna ", names(str_list[n]), ".png"), res=100, width=600, height=600)
+       
+       bp = barplot(t(mat[, 2:ncol(mat)]), col = rainbow(ncol(mat)-1), border = NA, space = 0,
+                    xlab = "Individuals", ylab = "Ancestry proportion", main = names(str_list[n]),
                     xaxt = "n")
-       axis(1, at = bp, labels = df_final[,"Label"], las = 2, cex.axis = 0.7)
+       axis(1, at = bp, labels = runner_df[,"Label"], las = 2, cex.axis = 0.7)
        
        dev.off()
        
@@ -1748,14 +1658,23 @@
      for (n in 1:length(str_list)) {
        
        runner_df = str_list[[n]]
-       mat = as.matrix(runner_df[,2:ncol(runner_df)])
-       png(filename = paste0("Landoltia ",names(str_list[n]),".png"), res=100, width = 1000, height=1000)
        
-       bp = barplot(t(mat[,2:ncol(mat)]), col=rainbow(ncol(mat)), border=NA, space=0,
-                    xlab="Individuals", ylab="Ancestry proportion", main=names(str_list[n]),
-                    xaxt = "n")
-       axis(1, at = bp, labels = df_final[,"Label"], las = 2, cex.axis = 0.5)
+       # --- Sort individuals by Cluster1 descending ---
        
+       # Extract only the cluster columns
+       cluster_cols <- paste0("Cluster", 1:(ncol(runner_df)-2))  # exclude Label and Pop
+       
+       # Sort descending for all clusters in order
+       runner_df <- runner_df[do.call(order, c(lapply(runner_df[, cluster_cols], function(x) -x))), ]
+
+       png(filename = paste0("Landoltia ", names(str_list[n]), ".png"), res=100, width=1000, height=600)
+       
+       mat <- as.matrix(runner_df[, cluster_cols])
+       
+       bp <- barplot(t(mat), col = rainbow(length(cluster_cols)), border = NA, space = 0,
+                     xlab = "Individuals", ylab = "Ancestry proportion",
+                     main = names(str_list[n]), xaxt = "n")
+       axis(1, at = bp, labels = runner_df$Label, las = 2, cex.axis = 0.7)
        dev.off()
        
      }
@@ -4100,4 +4019,208 @@
      close.screen(4)
      
      
+     
+     ## POPULATION: Kinship Heatmaps ####
+     
+     ## LANDOLTIA
+     
+     ## set parameters
+     col_pal = colorRampPalette(c(landoltia_col, "white"))
+     colbreaks = 10
+     clone_cutoff = 0.02
+     
+     ## set up split screen layout
+     par(mar=c(2,2,2,2),oma=c(3,3,3,3))
+     split.screen(rbind(c(0, 0.8, 0, 1), 
+                        c(0.8, 1, 0, 1)))
+     
+     ## create heatmap
+     screen(1)
+     image(1:ncol(landoltia_hamdist), 1:nrow(landoltia_hamdist),
+           landoltia_hamdist, axes = FALSE, frame=FALSE, xlab="", ylab="",
+           col=c("black",col_pal(colbreaks-2)),
+           breaks=c(0,seq(from=clone_cutoff, to=max(c(landoltia_hamdist,lemna_hamdist)), length.out = colbreaks-1)))
+     
+     
+     ## generate axis positions and labels for waterbody
+     landoltia_waterbody = unique(substr(colnames(landoltia_hamdist),1,3))
+     landoltia_waterbody_pos = vector()
+     for(n in 1:length(landoltia_waterbody)) {landoltia_waterbody_pos[n] = median(which(substr(colnames(landoltia_hamdist),1,3) == landoltia_waterbody[n]))}
+     mtext(landoltia_waterbody, side = 1, at = landoltia_waterbody_pos, cex = 0.5, line=0.5 ,las=2)
+     mtext(landoltia_waterbody, side = 2, at = landoltia_waterbody_pos, cex = 0.5, line=0.5 ,las=2)
+     
+     ## generate separating lines
+     landoltia_deep_waterbody = c("P10", "P14", "P19", "P27", "P36")
+     landoltia_deep_waterbody_pos = list()
+     for(n in 1:length(landoltia_deep_waterbody)) {
+       
+       runner_min = min(which(substr(colnames(landoltia_hamdist),1,3) == landoltia_deep_waterbody[n]))-0.5
+       runner_max = max(which(substr(colnames(landoltia_hamdist),1,3) == landoltia_deep_waterbody[n]))+0.5
+       
+       landoltia_deep_waterbody_pos[[n]] = c(runner_min, runner_max) 
+       
+     }
+     abline(v=(unlist(landoltia_deep_waterbody_pos)), col="white")  
+     abline(h=(unlist(landoltia_deep_waterbody_pos)), col="white")  
+     close.screen(1)
+     
+     ## add legend
+     screen(2)
+     par(mar=c(2,1,2,4))
+     plot(NA,type="n",ann=FALSE,xlim=c(1,2),ylim=c(0,colbreaks),xaxt="n",yaxt="n",bty="n")
+     for (n in 1:(colbreaks-1)) {rect(1,n-1,2,n, col=c("black",col_pal(colbreaks-2))[n])}
+     axis(side=4, at=c(1:(colbreaks-1))-0.5, 
+          labels=round(seq(from=min(c(landoltia_hamdist, lemna_hamdist)), 
+                           to=max(c(landoltia_hamdist, lemna_hamdist)), 
+                           length.out=colbreaks-1),2), 
+          las=2, lwd=0, lwd.ticks=1)
+     close.screen(2)
+     close.screen(all.screens=TRUE)
+     
+     ## LEMNA
+     
+     ## set parameters
+     col_pal = colorRampPalette(c(lemna_col, "white"))
+     colbreaks = 10
+     clone_cutoff = 0.02
+     
+     ## set up split screen layout
+     par(mar=c(2,2,2,2),oma=c(3,3,3,3))
+     split.screen(rbind(c(0, 0.8, 0, 1), 
+                        c(0.8, 1, 0, 1)))
+     
+     ## create heatmap
+     screen(1)
+     image(1:ncol(lemna_hamdist), 1:nrow(lemna_hamdist),
+           lemna_hamdist, axes = FALSE, frame=FALSE, xlab="", ylab="",
+           col=c("black",col_pal(colbreaks-2)),
+           breaks=c(0,seq(from=clone_cutoff, to=max(c(landoltia_hamdist,lemna_hamdist)), length.out = colbreaks-1)))
+     
+     
+     ## generate axis positions and labels for waterbody
+     lemna_waterbody = unique(substr(colnames(lemna_hamdist),1,3))
+     lemna_waterbody_pos = vector()
+     for(n in 1:length(lemna_waterbody)) {lemna_waterbody_pos[n] = median(which(substr(colnames(lemna_hamdist),1,3) == lemna_waterbody[n]))}
+     mtext(lemna_waterbody, side = 1, at = lemna_waterbody_pos, cex = 0.5, line=0.5 ,las=2)
+     mtext(lemna_waterbody, side = 2, at = lemna_waterbody_pos, cex = 0.5, line=0.5 ,las=2)
+     
+     ## generate separating lines
+     lemna_deep_waterbody = c("P10", "P14", "P19", "P27", "P36")
+     lemna_deep_waterbody_pos = list()
+     for(n in 1:length(lemna_deep_waterbody)) {
+       
+       runner_min = min(which(substr(colnames(lemna_hamdist),1,3) == lemna_deep_waterbody[n]))-0.5
+       runner_max = max(which(substr(colnames(lemna_hamdist),1,3) == lemna_deep_waterbody[n]))+0.5
+       
+       lemna_deep_waterbody_pos[[n]] = c(runner_min, runner_max) 
+       
+     }
+     abline(v=(unlist(lemna_deep_waterbody_pos)), col="white")  
+     abline(h=(unlist(lemna_deep_waterbody_pos)), col="white")  
+     close.screen(1)
+     
+     ## add legend
+     screen(2)
+     par(mar=c(2,1,2,4))
+     plot(NA,type="n",ann=FALSE,xlim=c(1,2),ylim=c(0,colbreaks),xaxt="n",yaxt="n",bty="n")
+     for (n in 1:(colbreaks-1)) {rect(1,n-1,2,n, col=c("black",col_pal(colbreaks-2))[n])}
+     axis(side=4, at=c(1:(colbreaks-1))-0.5, 
+          labels=round(seq(from=min(c(landoltia_hamdist, lemna_hamdist)), 
+                           to=max(c(landoltia_hamdist, lemna_hamdist)), 
+                           length.out=colbreaks-1),2), 
+          las=2, lwd=0, lwd.ticks=1)
+     close.screen(2)
+     close.screen(all.screens=TRUE)
+     
+     
+     ## POPULATION: Distance Decay Plots (pre Tim feedback) ####
+     
+     ## read and transform coordinates
+     all_coordinates = read.csv("C:/Users/timte/Desktop/Brisbane/Chapter 1/Second run early 2025/duckweed_coordinates.csv")
+     all_coordinates$latitude = sapply(all_coordinates[,"GPS_S"], convert_dmm_to_dd)
+     all_coordinates$longitude = sapply(all_coordinates[,"GPS_E"], convert_dmm_to_dd)
+     
+     ## assemble plotting window
+     split.screen(rbind(c(0, 0.5, 0, 1), 
+                        c(0.5, 1, 0, 1)))
+     
+     ## LANDOLTIA
+     
+     ## subset to landoltia
+     landoltia_coor = all_coordinates[which(colnames(landoltia_hamdist) %in% all_coordinates[,"ID"]),]
+     
+     ## calculate geographic distance
+     landoltia_geodist = round(distm(landoltia_coor[, c("longitude", "latitude")], fun = distVincentyEllipsoid),2)
+     rownames(landoltia_geodist) = landoltia_coor[,"ID"]; colnames(landoltia_geodist) = landoltia_coor[,"ID"]
+     
+     ## reduce matrix to triangle
+     landoltia_hamdist_vector = landoltia_hamdist[lower.tri(landoltia_hamdist, diag=FALSE)]
+     landoltia_geodist_vector = landoltia_geodist[lower.tri(landoltia_geodist, diag=FALSE)]
+     
+     ## convert to km
+     landoltia_geodist_vector = landoltia_geodist_vector/1000
+     
+     ## assemble plot
+     screen(1)
+     par(mar=c(4,4,2,0.2))
+     plot(landoltia_geodist_vector, landoltia_hamdist_vector,
+          pch=21, bg=landoltia_col, cex=0.6, ylim=c(-0.01,max(c(lemna_hamdist,landoltia_hamdist))),
+          xlab="Geographic distance km", 
+          ylab="Genetic distance")
+     lines(x = c(min(landoltia_geodist_vector), max(landoltia_geodist_vector)),
+           y = c(mean(landoltia_hamdist_vector), mean(landoltia_hamdist_vector)), lwd=2)
+     clip(min(landoltia_geodist_vector), max(landoltia_geodist_vector),0,0.8)
+     abline(h=0.02, lty=3, lwd=2)
+     abline(lm(landoltia_hamdist_vector ~ landoltia_geodist_vector), col="red", lwd=2)
+     
+     ## legend
+     usr = par("usr"); clip(usr[1], usr[2], usr[3], usr[4])
+     legend("topleft", inset=0.02, legend=c("mean", "model", "clone cutoff"),
+            lty=c(1,1,3), col=c("black", "red", "black"), lwd=c(2,2,2))
+     close.screen(1)
+     
+     ## LEMNA
+     
+     ## subset to lemna
+     lemna_coor = all_coordinates[which(colnames(lemna_hamdist) %in% all_coordinates[,"ID"]),]
+     
+     ## calculate geographic distance
+     lemna_geodist = round(distm(lemna_coor[, c("longitude", "latitude")], fun = distVincentyEllipsoid),2)
+     rownames(lemna_geodist) = lemna_coor[,"ID"]; colnames(lemna_geodist) = lemna_coor[,"ID"]
+     
+     ## reduce matrix to triangle
+     lemna_hamdist_vector = lemna_hamdist[lower.tri(lemna_hamdist, diag=FALSE)]
+     lemna_geodist_vector = lemna_geodist[lower.tri(lemna_geodist, diag=FALSE)]
+     
+     ## transform to km
+     lemna_geodist_vector = lemna_geodist_vector/1000
+     
+     ## assemble plot
+     screen(2)
+     par(mar=c(4,0.2,2,4))
+     plot(lemna_geodist_vector, lemna_hamdist_vector,
+          pch=21, bg=lemna_col, cex=0.6, ylim=c(-0.01,max(c(lemna_hamdist,lemna_hamdist))),
+          xlab="Geographic distance km", ylab="", yaxt = "n")
+     lines(x = c(min(lemna_geodist_vector), max(lemna_geodist_vector)),
+           y = c(mean(lemna_hamdist_vector), mean(lemna_hamdist_vector)), lwd=2)
+     clip(min(lemna_geodist_vector), max(lemna_geodist_vector),0,0.8)
+     abline(h=0.02, lty=3, lwd=2)
+     abline(lm(lemna_hamdist_vector ~ lemna_geodist_vector), col="red", lwd=2)
+     close.screen(2)
+     
+     ## Mantel tests
+     
+     ## LANDOLTIA
+     vegan::mantel(landoltia_hamdist, landoltia_geodist, permutations = 1000)
+     
+     ## LEMNA
+     vegan::mantel(lemna_hamdist, lemna_geodist, permutations = 1000)
+     
+     
+     ## mantel test and the like ####
+     
+     library(ecodist)
+     MRM(as.dist(landoltia_hamdist) ~ as.dist(landoltia_geodist), nperm = 999)
+     
+     mantel(landoltia_hamdist,landoltia_geodist)
      
